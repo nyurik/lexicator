@@ -16,7 +16,7 @@ python3.7 lexicator.py --help
 python3.7 lexicator.py -p изотоп -p барбариска
 
 # Parse everything (will take 30-60min)
-python3.7 lexicator.py -
+python3.7 lexicator.py -r parsed_wiki_words
 ```
 
 ## Caches
