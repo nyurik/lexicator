@@ -12,7 +12,7 @@ class WikiWordParser(CacheJsonl):
         self.cache = cache
 
     def generate(self, append=False):
-        with open(self.filename, "a+" if append else "w+") as file:
+        with open(self.filename, "a+" if append else "w+", encoding='utf-8') as file:
             if append:
                 print('', file=file)
             for res in self.parse_words():

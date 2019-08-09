@@ -16,7 +16,7 @@ SELECT ?id ?idLabel WHERE {
   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
 }''')
 
-        with open(self.filename, "w+") as file:
+        with open(self.filename, "w+", encoding='utf-8') as file:
             print('\n'.join(to_json((entity_id(r['id']), r['idLabel']['value'])) for r in result), file=file)
 
     def load(self):

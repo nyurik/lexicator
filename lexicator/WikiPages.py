@@ -39,7 +39,7 @@ class WikiPages(CacheJsonl):
             self._reload()
             if self._data:
                 loaded_titles = {p.title for p in self._data}
-        with open(self.filename, "a+" if append else "w+") as file:
+        with open(self.filename, "a+" if append else "w+", encoding='utf-8') as file:
             if append:
                 print('', file=file)
             for batch in batches(self.get_all_relevant_pages(loaded_titles, append), 50):

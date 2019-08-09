@@ -47,7 +47,7 @@ class CacheJsonl(Cache):
         self.object_hook = AttrDict
 
     def load(self):
-        with open(self.filename, "r") as file:
+        with open(self.filename, "r", encoding='utf-8') as file:
             items = []
             for line in file.readlines():
                 line = line.rstrip()
@@ -60,7 +60,7 @@ class CacheJsonl(Cache):
         if not os.path.isfile(self.filename):
             self.regenerate()
 
-        with open(self.filename, "r") as file:
+        with open(self.filename, "r", encoding='utf-8') as file:
             for line in file:
                 line = line.rstrip()
                 if line:

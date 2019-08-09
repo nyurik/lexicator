@@ -23,7 +23,7 @@ class Lexemes(CacheJsonl):
         self.language_qid = RUSSIAN_LANGUAGE
 
     def generate(self, append=False):
-        with open(self.filename, "w+") as file:
+        with open(self.filename, "w+", encoding='utf-8') as file:
             batch_size = 250 if self.use_bot_limits else 50
             for batch in batches(self.existing_ids(), batch_size):
                 entities = self.get_entities(batch)
