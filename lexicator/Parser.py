@@ -73,9 +73,9 @@ class Parser:
         self.existing_entities = existing_entities
         self.fields = [v for v in known_fields if v.name in fields] if fields else known_fields
         self.expand_template = {
-            'inflection сущ ru': lambda args: args.has('form') and not str(args.get('form').value).strip(),
-            'падежи': lambda args: False,
-            'сущ-ru': lambda args: False,
+            'inflection сущ ru': lambda arg: arg.has('form') and str(arg.get('form').value).strip(),
+            'падежи': lambda arg: False,
+            'сущ-ru': lambda arg: False,
         }
         assert (set(root_templates) < set(self.expand_template.keys()))
 
@@ -113,14 +113,12 @@ class WordParser:
 
 class TemplateParser:
 
-    def __init__(self, template_name: str, word: str, content, arguments, parser: WordParser,
-                 disable_warnings=False) -> None:
+    def __init__(self, template_name: str, word: str, content, arguments, parser: WordParser) -> None:
         self.template_name = template_name
         self.word = word
         self.content = content
         self.arguments = arguments
         self.parser = parser
-        self.disable_warnings = disable_warnings
 
     def run(self):
         # print(f'\n------------------ {self.word}: "{self.template_name}" ----------------------')
@@ -145,7 +143,7 @@ class TemplateParser:
                 code.replace(arg, self.arguments[arg_name])
             elif arg.default is not None:
                 self.apply_wikitext(arg.default)
-                code.replace(arg, arg.default)
+                code.replace(arg, str(arg.default).strip())
         elif typ == Template:
             self.apply_wikitext(arg.name)
             name = str(arg.name.get(0)).strip()
@@ -177,24 +175,18 @@ class TemplateParser:
                 key = str(arg.name).replace('#ifexist:', '').strip().replace('Шаблон:', '').strip()
                 self.repl_conditional(arg, code, 1 if key in self.parser.templates else 2)
             else:
-                unexpandable = name in self.parser.expand_template and not self.parser.expand_template[name](arg)
-                old_warnings = self.disable_warnings
-                if unexpandable:
-                    self.disable_warnings = True
                 for param in arg.params:
                     self.apply_value(code, param)
-                self.disable_warnings = old_warnings
-
                 if name in custom_templates:
                     custom_templates[name](self, code, arg)
-                elif unexpandable:
+                elif name in self.parser.expand_template and not self.parser.expand_template[name](arg):
                     # self.warn(f"Template {name} should not be expanded")
                     pass
                 elif name in self.parser.templates:
-                    sub_params = {str(p.name): str(p.value) for p in arg.params}
+                    sub_params = {str(p.name).strip(): str(p.value).strip() for p in arg.params}
                     new_text = TemplateParser(
                         f'{self.template_name}.{name}', self.word, self.parser.templates[name].content,
-                        sub_params, self.parser, self.disable_warnings).run()
+                        sub_params, self.parser).run()
                     code.replace(arg, str(new_text).strip())
                 else:
                     self.warn(f"Template {name} is not known")
@@ -223,5 +215,4 @@ class TemplateParser:
             code.remove(arg)
 
     def warn(self, message):
-        if not self.disable_warnings:
-            self.parser.warnings.append(message)
+        self.parser.warnings.append(message)
