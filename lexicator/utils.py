@@ -19,7 +19,7 @@ def to_json(obj, pretty=False):
     if pretty:
         return json.dumps(obj, ensure_ascii=False, indent=2)
     else:
-        return json.dumps(obj, ensure_ascii=False)
+        return json.dumps(obj, ensure_ascii=False, separators=(',', ':'))
 
 
 def get_site(host: str) -> Site:
