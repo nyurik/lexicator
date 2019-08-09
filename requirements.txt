@@ -1,0 +1,6 @@
+-i https://pypi.org/simple
+
+requests>=2.20.1
+pywikiapi>=1.1.1
+mwparserfromhell>=0.5.4
+docopt
