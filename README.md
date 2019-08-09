@@ -3,7 +3,7 @@ Imports Wiktionary's grammatical data into Wikidata
 
 ## Usage
 
-Install Python 3.7 or later
+Install Python 3.7 or later, clone this repo, and run these commands:
 
 ```bash
 # Install required dependencies
