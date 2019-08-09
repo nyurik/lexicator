@@ -12,22 +12,33 @@ class WikiWordParser(CacheJsonl):
         self.cache = cache
 
     def generate(self, append=False):
+        loaded_titles = set()
+        if append:
+            self._reload()
+            if self._data:
+                loaded_titles = {p.title for p in self._data}
         with open(self.filename, "a+" if append else "w+", encoding='utf-8') as file:
             if append:
                 print('', file=file)
-            for res in self.parse_words():
+            for res in self.parse_words(append, loaded_titles):
                 print(to_json(res), file=file)
 
-    def parse_words(self, words=None):
+    def _reload(self):
+        super()._reload()
+        if self._data:
+            self._data = {v.title: v.templates for v in self._data}
+
+    def parse_words(self, words=None, ignore=None):
         if isinstance(words, str):
             words = [words]
         all_words = {w.title: w for w in self.cache.wiki_words.get()}
         parser = Parser(self.cache.wiki_templates.get(), self.get_existing_lexemes(), self.parse_fields)
         for word in (words or all_words):
-            try:
-                yield parser.parse_word(all_words[word])
-            except ValueError as err:
-                print(f'***** {word} *****: {err}')
+            if not ignore or word not in ignore:
+                try:
+                    yield parser.parse_word(all_words[word])
+                except ValueError as err:
+                    print(f'***** {word} *****: {err}')
 
     def get_existing_lexemes(self) -> Dict[str, Dict[str, List]]:
         category_ids = self.cache.lexical_categories.ids()

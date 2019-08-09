@@ -2,19 +2,22 @@
 
 Usage:
   lexicator.py [-p <word>]...
-  lexicator.py [-r <generator>]... [-o] [-u <user>]
+  lexicator.py [-r <generator>]... [-o]
+  lexicator.py [-v <word>]
+  lexicator.py [-u <user>]
   lexicator.py (-h | --help)
 
 Options:
   -p --parse <word>        Test-parse one or more words, checks the cache first.
   -r --refresh <generator> Reset and regenerate cached values for one or more generators.
   -o --override            If given, --refresh will override rather than append.
+  -v --validate <word>     Validate a single word. If <word> is a '*', validates all of them.
   -u --user <user>         Bot user name.  The password should be in ./password file. [default: YurikBot@lexicator]
   -h --help                Show this screen.
 """
 from docopt import docopt
-from lexicator import Config, Caches, get_site, WikidataQueryService, to_json
 from pathlib import Path
+from lexicator import Config, Caches, get_site, WikidataQueryService, to_json, Validator
 
 
 def main(arguments):
@@ -54,6 +57,19 @@ def main(arguments):
                     print(to_json(data, pretty=True))
             except Exception as err:
                 print(f'FAILURE: ***** {word} *****: {err}')
+
+    word = arguments['--validate']
+    if word:
+        do_all = word == '*'
+        if not do_all:
+            print(f"\n================= Validating {word}...")
+            caches.wiki_words.regenerate(append=word)
+            caches.parsed_wiki_words.regenerate(append=word)
+            todo = [word]
+        else:
+            todo = caches.parsed_wiki_words.get().keys()
+
+        Validator(caches.parsed_wiki_words.get(), todo).run()
 
 
 if __name__ == '__main__':
