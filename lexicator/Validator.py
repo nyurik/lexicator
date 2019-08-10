@@ -1,10 +1,3 @@
-from typing import Iterable, Dict, List
-
-from .Cache import CacheJsonl
-from .Parser import Parser
-from .utils import list_to_dict_of_lists, to_json
-
-
 class Validator:
     def __init__(self, parser, words):
         self.parser = parser
@@ -41,14 +34,27 @@ class Validator:
 
         gender = False
         if 'род' in params:
-            if params['род'] == 'муж':
-                gender = 'masculine'
-            elif params['род'] == 'жен':
+            gender = params['род']
+            if gender == 'жен' or gender == 'ж':
                 gender = 'feminine'
-            elif params['род'] == 'ср':
-                gender = 'neuter'
+            elif gender == 'муж' or gender == 'м':
+                gender = 'masculine'
+            elif gender == 'ср' or gender == 'с':
+                gender = 'neuter'  # name?
+            elif gender == 'общ' or gender == 'о':
+                gender = 'common'  # name?
+            elif gender == 'жс':
+                gender = 'common-feminine'  # name?
+            elif gender == 'мс':
+                gender = 'common-masculine'  # name?
+            elif gender == 'мж':
+                gender = 'common+'  # name?
             else:
-                raise ValueError(f"unrecognized gender '{params['род']}'")
+                raise ValueError(f"unrecognized gender '{gender}'")
+
+        zaliznyak = False
+        if 'зализняк' in params:
+            zaliznyak = params['зализняк']
 
         declension = False
         if 'скл' in params:
