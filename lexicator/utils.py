@@ -1,21 +1,26 @@
 import dataclasses
 import json
 from collections import defaultdict
-from typing import Iterable, NewType, Tuple, Union, Dict, Iterator
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Iterable, NewType, Tuple, Union, Dict, Any, TypeVar, List
 
 import requests
+from mwparserfromhell.nodes import Template
+from mwparserfromhell.nodes.extras import Parameter
 from pywikiapi import Site, AttrDict
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
-from .consts import re_template_names, re_template_name_suspect
+from urllib3.util.retry import Retry
 
 # template-name, params-dict (or none)
 TemplateType = NewType('TemplateType', Tuple[str, Union[Dict[str, str], None]])
 
+T = TypeVar('T')
+
 
 def to_json(obj, pretty=False):
     if dataclasses.is_dataclass(obj):
-        obj = {k: v for k, v in dataclasses.asdict(obj).items() if v is not None}
+        obj = clean_empty_vals(dataclasses.asdict(obj))
     if pretty:
         return json.dumps(obj, ensure_ascii=False, indent=2)
     else:
@@ -35,16 +40,13 @@ def list_to_dict_of_lists(items, key, item_extractor=None):
     for item in items:
         k = key(item)
         if k is not None:
-            if item_extractor: item = item_extractor(item)
+            if item_extractor:
+                item = item_extractor(item)
             result[k].append(item)
     return result
 
 
-def lang_pick(vals, lang):
-    return vals[lang] if lang in vals else vals['en']
-
-
-def batches(items: Iterable, batch_size: int):
+def batches(items: Iterable[T], batch_size: int) -> Iterable[List[T]]:
     res = []
     for value in items:
         res.append(value)
@@ -55,10 +57,37 @@ def batches(items: Iterable, batch_size: int):
         yield res
 
 
-def extract_template_params(code) -> Iterator[TemplateType]:
-    for param in code.filter_templates():
-        template = str(param.name).strip()
-        if re_template_names.match(template):
-            yield template, {str(p.name).strip(): str(p.value).strip() for p in param.params}
-        elif re_template_name_suspect.match(template):
-            yield template, None
+def params_to_dict(params):
+    return {str(p.name).strip(): str(p.value).strip() for p in params}
+
+
+def clean_empty_vals(obj: dict, empty_value=None):
+    return {k: v for k, v in obj.items() if v != empty_value}
+
+
+def trim_timedelta(td: timedelta) -> str:
+    return str(td + timedelta(seconds=1)).split('.', 1)[0]
+
+
+@dataclass(frozen=True)
+class PageContent:
+    title: str
+    timestamp: datetime = None
+    ns: int = None
+    revid: int = None
+    user: str = None
+    redirect: str = None
+    content: str = None
+    data: Any = None
+
+    def to_dict(self):
+        obj = clean_empty_vals(dataclasses.asdict(self))
+        return obj
+
+    @staticmethod
+    def from_dict(obj):
+        return PageContent(**obj)
+
+
+def params_to_wikitext(template):
+    return str(Template(template[0], params=[Parameter(k, v) for k, v in template[1].items()]))

@@ -2,7 +2,7 @@
 
 Usage:
   lexicator.py [-p <word>]...
-  lexicator.py [-r <generator>]... [-o]
+  lexicator.py [-r <generator>]...
   lexicator.py [-v <word>]
   lexicator.py [-u <user>]
   lexicator.py (-h | --help)
@@ -10,14 +10,13 @@ Usage:
 Options:
   -p --parse <word>        Test-parse one or more words, checks the cache first.
   -r --refresh <generator> Reset and regenerate cached values for one or more generators.
-  -o --override            If given, --refresh will override rather than append.
   -v --validate <word>     Validate a single word. If <word> is a '*', validates all of them.
   -u --user <user>         Bot user name.  The password should be in ./password file. [default: YurikBot@lexicator]
   -h --help                Show this screen.
 """
 from docopt import docopt
 from pathlib import Path
-from lexicator import Config, Caches, get_site, WikidataQueryService, to_json, Validator
+from lexicator import Config, Storage, get_site, WikidataQueryService, to_json, Validator
 
 
 def main(arguments):
@@ -37,17 +36,17 @@ def main(arguments):
     else:
         print(f"Password file {password_file.absolute()} does not exist. Wikidata writing is disabled.")
 
-    caches = Caches(config)
+    caches = Storage(config)
     generators = list(caches.__dict__.keys())
     for gen in arguments['--refresh']:
         if gen not in generators:
             print(f"Generator {gen} is unrecognized. Available generators: {', '.join(generators)}")
         else:
-            caches.__dict__[gen].regenerate(append=not arguments['--override'])
+            caches.__dict__[gen].refresh()
 
     words_to_do = arguments['--parse']
     if words_to_do:
-        caches.wiki_words.regenerate(append=words_to_do)
+        caches.wiki_words.get(words_to_do)
         for word in words_to_do:
             print(f"\n================= Parsing {word}...")
             try:
