@@ -13,17 +13,14 @@ from .WikidataQueryService import entity_id, WikidataQueryService
 from .Properties import Q_PART_OF_SPEECH, Q_RUSSIAN_LANG
 from .PageRetriever import PageRetriever
 from .consts import NS_MAIN, NS_TEMPLATE, re_template_names, NS_LEXEME
-from .utils import PageContent, to_json, batches
-from pywikiapi.utils import to_timestamp
+from .utils import PageContent, to_json, batches, Config
+from pywikiapi import to_timestamp
 
 
 class WikipageDownloader(PageRetriever):
-    @property
-    def follow_redirects(self) -> bool:
-        return self._follow_redirects
-
-    def __init__(self, site: Site, namespace: int, follow_redirects: bool = True,
+    def __init__(self, config: Config, site: Site, namespace: int, follow_redirects: bool = True,
                  title_filter: Callable[[int, str], bool] = None):
+        super().__init__(config, is_remote=True)
         self.site = site
         self.namespace = namespace
         self._follow_redirects = follow_redirects
@@ -44,6 +41,10 @@ class WikipageDownloader(PageRetriever):
         if self.follow_redirects:
             self.find_recent_changes_query['rcshow'] = '!redirect'
 
+    @property
+    def follow_redirects(self) -> bool:
+        return self._follow_redirects
+
     def find_recent_changes(self, last_change: datetime) -> Iterable[Tuple[str, datetime]]:
         result: Dict[str, datetime] = {}
         if self.site:
@@ -57,6 +58,7 @@ class WikipageDownloader(PageRetriever):
 
     def get_titles(self,
                    source: Iterable[str],
+                   force: Union[bool, str],
                    progress_reporter: Callable[[str], None] = None) -> Iterable[PageContent]:
         if not self.site:
             return []
@@ -113,7 +115,7 @@ class WikipageDownloader(PageRetriever):
                 if not exclude or (v not in exclude or exclude[v.title] < v.timestamp):
                     yield v
 
-        yield from self.get_titles(get_tiles(), progress_reporter)
+        yield from self.get_titles(get_tiles(), force=False, progress_reporter=progress_reporter)
 
     def can_refresh(self) -> bool:
         return bool(self.site)
@@ -121,8 +123,8 @@ class WikipageDownloader(PageRetriever):
 
 class DownloaderForWords(WikipageDownloader):
 
-    def __init__(self, site: Site):
-        super().__init__(site, NS_MAIN)
+    def __init__(self, config: Config):
+        super().__init__(config, config.wiktionary, NS_MAIN)
 
     def get_all_titles(self, progress_reporter: Callable[[str], None],
                        exclude: Dict[str, datetime] = None,
@@ -146,8 +148,8 @@ class DownloaderForWords(WikipageDownloader):
 
 
 class DownloaderForTemplates(WikipageDownloader):
-    def __init__(self, site: Site):
-        super().__init__(site, NS_TEMPLATE, title_filter=self.title_filter)
+    def __init__(self, config: Config):
+        super().__init__(config, config.wiktionary, NS_TEMPLATE, title_filter=self.title_filter)
 
         # noinspection SpellCheckingInspection
         self.re_html_comment = re.compile(r'<!--[\s\S]*?-->')
@@ -171,11 +173,11 @@ class DownloaderForTemplates(WikipageDownloader):
 
 
 class LexemDownloader(WikipageDownloader):
-    def __init__(self, site: Site, wdqs: WikidataQueryService):
-        super().__init__(site, NS_LEXEME)
-        self.wdqs = wdqs
+    def __init__(self, config: Config):
+        super().__init__(config, config.wikidata, NS_LEXEME)
+        self.wdqs = config.wdqs
 
-    def query_wdqs(self, last_change: datetime = None, get_lemma = False):
+    def query_wdqs(self, last_change: datetime = None, get_lemma=False):
         if not self.wdqs:
             print(f"API: WDQS is disabled")
             return {}
@@ -215,7 +217,9 @@ SELECT ?lexemeId{' ?lemma' if get_lemma else ''} ?ts WHERE {{
     def to_content(self, page) -> Union[PageContent, None]:
         p = super().to_content(page)
         if p:
-            p = dataclasses.replace(p, data=json.loads(p.content)['lemmas']['ru']['value'])
+            data = json.loads(p.content)
+            p = dataclasses.replace(
+                p, data=data['lemmas']['ru']['value'], content=to_json(data))
         return p
 
     # def get_existing_lexemes(self) -> Dict[str, Dict[str, List]]:

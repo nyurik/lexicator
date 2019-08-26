@@ -1,12 +1,17 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Iterable, Callable, Dict, Tuple, Any
+from typing import Iterable, Callable, Dict, Tuple, Any, Union
 
-from .utils import PageContent
+from .utils import PageContent, Config
 
 
 class PageRetriever(ABC):
-    source: 'ContentStore' = None
+
+    def __init__(self, config: Config, source: 'ContentStore' = None, is_remote=False) -> None:
+        super().__init__()
+        self.config = config
+        self.source: 'ContentStore' = source
+        self.is_remote = is_remote
 
     def init(self):
         pass
@@ -20,7 +25,10 @@ class PageRetriever(ABC):
         pass
 
     @abstractmethod
-    def get_titles(self, source: Iterable[str], progress_reporter: Callable[[str], None] = None) \
+    def get_titles(self,
+                   source: Iterable[str],
+                   force: Union[bool, str],
+                   progress_reporter: Callable[[str], None] = None) \
             -> Iterable[PageContent]:
         pass
 

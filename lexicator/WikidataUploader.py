@@ -14,16 +14,26 @@ class WikidataUploader:
         for page in self.desired_lexemes.get_all([self.desired_lexemes.PageContentDb.content is None]):
             self._run_one(page)
 
-    def run_one(self, word, qid=None):
-        self._run_one(self.desired_lexemes.get(word, True), qid)
+    def run_one(self, word):
+        self._run_one(self.desired_lexemes.get(word, True))
 
-    def _run_one(self, page, qid=None):
+    def _run_one(self, page):
         word = page.data['lemmas']['ru']['value']
-        if word not in self.existing or qid:
-            self.upload(page, qid)
+        if word not in self.existing:
+            self.edit_entity(page.data, 'Importing from ru.wiktionary (manual pre-approval runs)', None)
+        else:
+            self.update(self.existing[word], page)
 
-    def upload(self, page: PageContent, qid):
-        self.edit_entity(page.data, 'Importing from ru.wiktionary (manual pre-approval runs)', qid)
+    # def compare(self, old, new, *path):
+    #     for p in path:
+    #         if p not
+    #
+    # def compare(self, old, new, *path):
+
+    def update(self, old: dict, page: PageContent):
+        new = page.data
+
+        self.edit_entity(page.data, 'Updating from ru.wiktionary (manual pre-approval runs)')
 
     def edit_entity(self, data, summary, qid):
         params = dict(

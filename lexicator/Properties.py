@@ -63,7 +63,7 @@ class Property:
         return {
             'snaktype': 'value',
             'property': self.id,
-            'datatype': self.type,
+            # 'datatype': self.type,
             'datavalue': {
                 'value': value,
                 'type': self.dv_type,
@@ -85,9 +85,9 @@ class Property:
         if 'claims' not in data: data['claims'] = {}
         claims = data['claims']
         claim = {
+            'mainsnak': self.create_snak(value.value),
             'type': 'statement',
             'rank': value.rank,
-            'mainsnak': self.create_snak(value.value),
         }
         if value.qualifiers and len(value.qualifiers) > 0:
             claim['qualifiers'] = {}
@@ -98,7 +98,7 @@ class Property:
             if not self.merge_all and not self.allow_multiple and not self.allow_qualifiers:
                 raise ValueError(
                     f"Cannot set value of {self} to '{value}', "
-                    f"already set to '{self.get_value(data['claims'][self])}'")
+                    f"already set to '{self.get_value(data['claims'][self.id])}'")
             claims[self.id].append(claim)
         else:
             claims[self.id] = [claim]
@@ -181,6 +181,7 @@ P_PRONUNCIATION_AUDIO = Property('P443', 'pronunciation-audio', 'commonsMedia')
 P_HYPHENATION = Property('P5279', 'hyphenation', 'string')
 
 Q_RUSSIAN_LANG = 'Q7737'
+RUSSIAN_PRE_REFORM_ID = 'ru-x-Q2442696'
 
 # SELECT ?idLabel ?id WHERE {
 #   ?id wdt:P31 wd:Q82042.
@@ -240,52 +241,64 @@ Q_FEATURES = {
     'vocative': 'Q185077',  # звательный
     'partitive': 'Q857325',  # разделительный
     'possessive': 'Q21470140',  # притяжательный
-}
 
-Q_GENDERS = {
+    # Special for Adjective
+    'short-form-adjective': 'Q4239848',
+
+    # Genders
     'feminine': 'Q1775415',
     'masculine': 'Q499327',
     'neuter': 'Q1775461',  # средний род
     'common': 'Q1305037',  # общий род
-}
 
-Q_QUALITIES = {
+    # Qualities
     'animate': 'Q51927507',  # одушевлённое
     'inanimate': 'Q51927539',  # неодушевлённое
-}
 
-Q_DECLENSIONS = {  # склонения
-    '1': 'Q66327367',
-    '2': 'Q66689134',
-    '3': 'Q66689140',
+    # Declensions -- склонения
+    'declension-1': 'Q66327367',
+    'declension-2': 'Q66689134',
+    'declension-3': 'Q66689140',
     'indeclinable noun': 'Q66689173',
     'adjectival': 'Q66689191',
     'pronoun': 'Q66689198',
 }
 
-Q_ZEL_CLASSES = {
+Q_ZAL_CLASSES = {
+    '0': 'Q66712697',
+    '1*a': 'Q66716618',
     '1a': 'Q66311515',
     '1b': 'Q66606159',
     '1c': 'Q66606177',
+    '1c①': 'Q66716619',
     '1d': 'Q66606179',
     '1e': 'Q66606180',
     '1f': 'Q66606181',
+    '1°a': 'Q66716620',
+    '2*a': 'Q66716622',
     '2a': 'Q66606182',
     '2b': 'Q66606183',
     '2c': 'Q66606184',
     '2d': 'Q66606185',
     '2e': 'Q66606186',
     '2f': 'Q66606187',
+    '3*a': 'Q66716624',
+    '3*b': 'Q66716625',
     '3a': 'Q66606188',
     '3b': 'Q66606189',
     '3c': 'Q66606190',
     '3d': 'Q66606191',
     '3e': 'Q66606192',
+    '3°a': 'Q66716627',
     '4a': 'Q66606193',
     '4b': 'Q66606194',
     '4c': 'Q66606195',
+    '5*a': 'Q66716628',
+    '5*b': 'Q66716629',
     '5a': 'Q66606196',
     '5b': 'Q66606197',
+    '6*a': 'Q66716630',
+    '6*b': 'Q66716631',
     '6a': 'Q66606198',
     '6b': 'Q66606199',
     '6c': 'Q66606200',
@@ -294,3 +307,96 @@ Q_ZEL_CLASSES = {
     '8b': 'Q66606202',
     '8e': 'Q66606203',
 }
+
+zal_normalizations = {
+    '(с3*a(1))': '(с3*a①)',
+    '(с3a(1))': '(с3a①)',
+    '(с4a(1))': '(с4a①)',
+    '(с6a(2))': '(c6a②)',
+    '1°c(1)': '1°c①',
+    '1a((1))': '1a[①]',
+    '1a((2))': '1a[②]',
+    '1a(2)': '1a②',
+    '1a(2)^': '1a②^',
+    '1b(1)': '1b①',
+    '1c(1)': '1c①',
+    '1c(1)^': '1c①^',
+    '1c(1)(2)': '1c①②',
+    '1c(2)': '1c②',
+    '1e(2)': '1e②',
+    '2*a(2)': '2*a②',
+    '2a(2)': '2a②',
+    '2b(1)': '2b①',
+    '2c(1)': '2c①',
+    '2f(2)': '2f②',
+    '3*a(1)': '3*a①',
+    '3*a(1)(2)': '3*a①②',
+    '3*a(2)': '3*a②',
+    '3*b(1)': '3*b①',
+    '3*b(1)(2)': '3*b①②',
+    '3*b(2)': '3*b②',
+    '3*c(2)': '3*c②',
+    '3*d(2)': '3*d②',
+    '3a(1)': '3a①',
+    '3a(1)(2)': '3a①②',
+    '3b(1)': '3b①',
+    '3c(1)': '3c①',
+    '3c(2)': '3c②',
+    '3d(1)': '3d①',
+    '4a(1)': '4a①',
+    '4a(2)': '4a②',
+    '4c(1)': '4c①',
+    '4f(1)': '4f①',
+    '5*a((2))': '5*a[②]',
+    '5*a(2)': '5*a②',
+    '5*b(2)': '5*b②',
+    '5a(2)': '5a②',
+    '6*a((2))': '6*a[②]',
+    '6*a(2)': '6*a②',
+    '6*d(2)': '6*d②',
+    '6c(1)': '6c①',
+    '7a(3)': '7a③',
+    '7b(2)': '7b②',
+    '7c(3)': '7c③',
+}
+
+# '*' :'Q66624434',
+# '°' :'Q66619529',
+# '(1)' :'Q66624528', # ①
+# '(2)' :'Q66624537', # ②
+# '(3)' :'Q66624544', # ③
+# '—' :'Q66624618',
+
+# Stem Classes
+# 0	Q66691574
+# 1	Q66605819
+# 2	Q66311616
+# 3	Q66312026
+# 4	Q66312029
+# 5	Q66312036
+# 6	Q66312041
+# 7	Q66312044
+# 8	Q66312049
+
+# Stress Classes
+# a	Q66459699
+# b	Q66605860
+# b′	Q66689132
+# c	Q66605863
+# d	Q66605874
+# d′	Q66689125
+# e	Q66605877
+# f	Q66605882
+# f′	Q66689116
+# f′′	Q66689120
+
+# CREATE
+# LAST	Lru	"класс 1*a по Зализняку"
+# LAST	Dru	"класс существительного 1*a согласно классификации Зализняка"
+# LAST	Len	"class 1*a in Zaliznyak"
+# LAST	Den	"noun class 1*a in Zaliznyak classification"
+# LAST	P31	Q66329814
+# LAST	P407	Q7737
+# LAST	P1552	Q66605819
+# LAST	P1552	Q66459699
+# LAST	P1552	Q66624434

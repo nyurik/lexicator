@@ -1,21 +1,22 @@
 from pywikiapi import Site
+from typing import Dict, Union
 
-from .LexemeTemplateParser import LexemeTemplateParser
-from .utils import PageContent
+from .TemplateParser import TemplateParser
+from .utils import PageContent, Config
 from .PageFilter import PageFilter
 from .ContentStore import ContentStore
 
 
 class LexemeMaker(PageFilter):
 
-    def __init__(self, source: ContentStore, wikidata: Site, resolve_noun_ru, resolve_transcriptions_ru) -> None:
-        super().__init__(source)
+    def __init__(self, config: Config, source: ContentStore, wikidata: Site,
+                 resolvers: Dict[str, ContentStore]) -> None:
+        super().__init__(config, source)
         self.source = source
         self.wikidata = wikidata
-        self.resolve_noun_ru = resolve_noun_ru
-        self.resolve_transcriptions_ru = resolve_transcriptions_ru
+        self.resolvers = resolvers
 
-    def process_page(self, page: PageContent):
+    def process_page(self, page: PageContent, force: Union[bool, str]):
         if not page.data:
             return
 
@@ -31,4 +32,4 @@ class LexemeMaker(PageFilter):
         elif not words:
             return
 
-        return LexemeTemplateParser(page, self.resolve_noun_ru, self.resolve_transcriptions_ru).run(), None
+        return TemplateParser(page, self.resolvers).run(), None

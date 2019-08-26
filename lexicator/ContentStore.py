@@ -47,7 +47,7 @@ class ContentStore:
                     revid=content.revid,
                     user=content.user,
                     redirect=content.redirect,
-                    data=to_compact_json(content.data),
+                    data=to_compact_json(content.data) if content.data else None,
                     content=content.content,
                 )
 
@@ -86,7 +86,7 @@ class ContentStore:
 
     def get_multiple(self, keys: Iterable[str], force=False) -> Iterable[PageContent]:
         self.init_retriever()
-        if not force:
+        if not force or (self.retriever.is_remote and force == 'local'):
             not_found: Set[str] = set()
             for batch in batches(keys, 500):
                 keys_tried = set()
@@ -109,7 +109,10 @@ class ContentStore:
                     yield from self.save_pages(self.retriever.get_titles(not_found))
                     not_found.clear()
             keys = not_found
-        yield from self.save_pages(self.retriever.get_titles(keys))
+
+        if force and isinstance(force, bool):
+            force = False
+        yield from self.save_pages(self.retriever.get_titles(keys, force=force))
 
     def read_object(self, key: str) -> PageContent:
         return self.get_raw_object(key).to_content()
@@ -123,8 +126,7 @@ class ContentStore:
         result = []
         for batch in batches(pages, 200):
             new_pages = {v.title: v for v in batch}
-            for page in self.db.query(self.PageContentDb).filter(
-                    self.PageContentDb.title.in_(new_pages.keys())):
+            for page in self.db.query(self.PageContentDb).filter(self.PageContentDb.title.in_(new_pages.keys())):
                 new_page = new_pages.pop(page.title)
                 page.title = new_page.title
                 page.timestamp = new_page.timestamp
@@ -173,7 +175,7 @@ class ContentStore:
         source, delete = self.get_refresh_source(last_change, reporter, filters)
 
         titles: Set[str] = set()
-        for batch in batches(source, 1000):
+        for batch in batches(source, 500):
             self.save_pages(batch)
             for v in batch:
                 progress['saved'] += 1
@@ -203,7 +205,8 @@ class ContentStore:
                     self.retriever_source.db, self.retriever_source.PageContentDb, filters)
                 source = self.retriever.get_titles(
                     {k: available[k] for k in available if k not in existing or existing[k] < available[k]},
-                    reporter)
+                    force=False,
+                    progress_reporter=reporter)
                 if not last_change and not filters:
                     delete = {k for k in existing if k not in available}
                 msg = f"Refreshing {self.filename} from underlying source. Last change at {last_change}, "
@@ -217,7 +220,8 @@ class ContentStore:
         else:
             source = self.retriever.get_titles(
                 (v[0] for v in self.retriever.find_recent_changes(last_change - timedelta(seconds=5))),
-                reporter)
+                force=False,
+                progress_reporter=reporter)
             print(f"Refreshing {self.filename} with the new changes. Last change at {last_change}, "
                   f"catching up {trim_timedelta(datetime.utcnow() - last_change)}")
 
@@ -280,8 +284,12 @@ class ContentStore:
             processed += 1
             if processed % 100 == 0 and (datetime.utcnow() - last_report_ts).total_seconds() >= 15:
                 last_report_ts = datetime.utcnow()
+                seconds = (last_report_ts - start_ts).total_seconds()
                 print(f"Processed {processed:,} and saved {progress['saved']:,} items "
-                      f"in {trim_timedelta(last_report_ts - start_ts)}. Current item is '{title}'")
+                      f"in {trim_timedelta(last_report_ts - start_ts)}. "
+                      f"Processing speed {int(processed / seconds):,}, "
+                      f"save speed {int(progress['saved'] / seconds):,} items/s. "
+                      f"Current item is '{title}'")
 
         result = func(progress, reporter, *args)
 

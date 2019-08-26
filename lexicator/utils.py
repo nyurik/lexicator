@@ -13,6 +13,8 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 # template-name, params-dict (or none)
+from lexicator import WikidataQueryService
+
 TemplateType = NewType('TemplateType', Tuple[str, Union[Dict[str, str], None]])
 
 T = TypeVar('T')
@@ -57,10 +59,6 @@ def batches(items: Iterable[T], batch_size: int) -> Iterable[List[T]]:
         yield res
 
 
-def params_to_dict(params):
-    return {str(p.name).strip(): str(p.value).strip() for p in params}
-
-
 def clean_empty_vals(obj: dict, empty_value=None):
     return {k: v for k, v in obj.items() if v != empty_value}
 
@@ -91,3 +89,13 @@ class PageContent:
 
 def params_to_wikitext(template):
     return str(Template(template[0], params=[Parameter(k, v) for k, v in template[1].items()]))
+
+
+@dataclass
+class Config:
+    use_bot_limits: bool
+    wiktionary: Site
+    wikidata: Site
+    wdqs: WikidataQueryService
+    parse_fields: Union[Iterable[str], None]
+    print_warnings: bool
