@@ -187,17 +187,13 @@ class LexemDownloader(WikipageDownloader):
         else:
             print(f"API: querying WDQS for all lexemes")
 
-        categories = {Q_PART_OF_SPEECH['noun']}
-
         # from datetime import timedelta
         # last_change -= timedelta(days=5)
         #
         res = self.wdqs.query(f"""\
 SELECT ?lexemeId{' ?lemma' if get_lemma else ''} ?ts WHERE {{
-  VALUES ?category {{ {' '.join(['wd:' + c for c in categories])} }}
   ?lexemeId <http://purl.org/dc/terms/language> wd:{Q_RUSSIAN_LANG};
       {'wikibase:lemma ?lemma;' if get_lemma else ''}
-      wikibase:lexicalCategory ?category;
       schema:dateModified ?ts.
   {f'FILTER (?ts >= "{to_timestamp(last_change)}"^^xsd:dateTime)' if last_change else ''}
 }}""")

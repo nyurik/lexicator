@@ -1,9 +1,9 @@
-from typing import Dict, Set, Union
+from typing import Dict, Set, Union, List, Any
 from dataclasses import dataclass, field
 
 
 def mono_value(lang, text):
-    return {'language': lang, 'text': text}
+    return {'text': text, 'language': lang}
 
 
 @dataclass
@@ -11,6 +11,33 @@ class ClaimValue:
     value: Union[str, Dict]
     qualifiers: Dict['Property', Set[str]] = field(default_factory=dict)
     rank: str = 'normal'
+
+
+def set_qualifiers_on_new(claim, qualifiers: Dict['Property', Any]):
+    if qualifiers and len(qualifiers) > 0:
+        try:
+            q = claim['qualifiers']
+        except KeyError:
+            q = {}
+            claim['qualifiers'] = q
+        for p, vals in qualifiers.items():
+            if isinstance(vals, str):
+                vals = [vals]
+            q[p.id] = [p.create_snak(v) for v in vals]
+
+
+def set_refernces_on_new(claim, references: Dict['Property', Any]):
+    if references and len(references) > 0:
+        try:
+            ref = claim['references']
+        except KeyError:
+            ref = [dict(snaks={})]
+            claim['references'] = ref
+        ref = ref[0]['snaks']
+        for p, vals in references.items():
+            if isinstance(vals, str):
+                vals = [vals]
+            ref[p.id] = [p.create_snak(v) for v in vals]
 
 
 class Property:
@@ -89,16 +116,13 @@ class Property:
             'type': 'statement',
             'rank': value.rank,
         }
-        if value.qualifiers and len(value.qualifiers) > 0:
-            claim['qualifiers'] = {}
-            for p, vals in value.qualifiers.items():
-                claim['qualifiers'][p.id] = [p.create_snak(v) for v in vals]
+        set_qualifiers_on_new(claim, value.qualifiers)
 
         if self.id in claims:
             if not self.merge_all and not self.allow_multiple and not self.allow_qualifiers:
                 raise ValueError(
                     f"Cannot set value of {self} to '{value}', "
-                    f"already set to '{self.get_value(data['claims'][self.id])}'")
+                    f"already set to '{self.get_value(data['claims'][self.id][0])}'")
             claims[self.id].append(claim)
         else:
             claims[self.id] = [claim]
@@ -174,20 +198,32 @@ P_HAS_QUALITY = Property('P1552', 'has-quality', 'wikibase-item', allow_multiple
 P_GRAMMATICAL_GENDER = Property('P5185', 'grammatical-gender', 'wikibase-item')
 P_INFLECTION_CLASS = Property('P5911', 'inflection-class', 'wikibase-item', allow_multiple=True)
 P_WORD_STEM = Property('P5187', 'word-stem', 'monolingualtext', allow_multiple=True)
+P_WORD_ROOT = Property('P5920', 'word-root', 'wikibase-item', allow_multiple=True)
 
 # Forms
-P_IPA_TRANSCRIPTION = Property('P898', 'IPA-transcription', 'string')
-P_PRONUNCIATION_AUDIO = Property('P443', 'pronunciation-audio', 'commonsMedia')
+P_PRONUNCIATION = Property('P7243', 'pronunciation', 'monolingualtext', allow_qualifiers=True)
+P_IPA_TRANSCRIPTION = Property('P898', 'IPA-transcription', 'string', is_qualifier=True)
+P_PRONUNCIATION_AUDIO = Property('P443', 'pronunciation-audio', 'commonsMedia', is_qualifier=True)
 P_HYPHENATION = Property('P5279', 'hyphenation', 'string')
+
+P_DESCRIBED_BY = Property('P1343', 'described-by', 'wikibase-item')
+
+P_IMPORTED_FROM_WM = Property('P143', 'imported-from-wm', 'wikibase-item', is_qualifier=True)
+Q_RU_WIKTIONARY = 'Q22116890'
 
 Q_RUSSIAN_LANG = 'Q7737'
 RUSSIAN_PRE_REFORM_ID = 'ru-x-Q2442696'
+
+Q_SOURCES = {
+    'оэсря': 'Q67130942',
+}
 
 # SELECT ?idLabel ?id WHERE {
 #   ?id wdt:P31 wd:Q82042.
 #   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
 Q_PART_OF_SPEECH = {
     'noun': 'Q1084',
+    'participle': 'Q814722',
     'possessive adjective': 'Q5051',
     'verb': 'Q24905',
     'adjective': 'Q34698',
@@ -223,6 +259,7 @@ Q_PART_OF_SPEECH = {
     'quantitative adverb': 'Q55869214',
     'qualitative pronoun': 'Q62059381',
     'comparative adverb': 'Q65248385',
+    'onomatopoeia': 'Q170239',
 }
 
 Q_FEATURES = {
@@ -264,7 +301,9 @@ Q_FEATURES = {
     'pronoun': 'Q66689198',
 }
 
-Q_ZAL_CLASSES = {
+Q_ZAL_ADJ_CLASSES = {
+}
+Q_ZAL_NOUN_CLASSES = {
     '0': 'Q66712697',
     '1*a': 'Q66716618',
     '1a': 'Q66311515',

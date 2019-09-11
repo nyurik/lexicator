@@ -1,5 +1,7 @@
 import re
 
+from lexicator.Properties import Q_FEATURES, P_INFLECTION_CLASS, Q_ZAL_NOUN_CLASSES, zal_normalizations, \
+    Q_ZAL_ADJ_CLASSES
 from .TemplateProcessor import TemplateProcessor
 
 
@@ -17,13 +19,13 @@ def validate_flag(params_to_check, enable=False):
 
 
 class Adjective(TemplateProcessor):
-    def __init__(self, template: str, parser) -> None:
-        super().__init__(template, parser, [
+    def __init__(self, template: str) -> None:
+        super().__init__(template, [
             'acc-pl-a', 'acc-pl-n', 'acc-sg-f', 'acc-sg-m-a', 'acc-sg-m-n', 'acc-sg-n', 'anim', 'dat-pl', 'dat-sg-f',
             'dat-sg-m', 'dat-sg-n', 'gen-pl', 'gen-sg-f', 'gen-sg-m', 'gen-sg-n', 'ins-pl', 'ins-sg-f', 'ins-sg-m',
             'ins-sg-n', 'nof', 'nol', 'nom', 'nom-pl', 'nom-sg-f', 'nom-sg-m', 'nom-sg-n', 'non', 'nowrap', 'prp-pl',
             'prp-sg-f', 'prp-sg-m', 'prp-sg-n', 'srt-pl', 'srt-sg-f', 'srt-sg-m', 'srt-sg-n', 'краткая', 'суфф'
-        ], False, expects_type='adjective')
+        ], is_primary=True)
 
     parameters = {
         #
@@ -82,6 +84,35 @@ class Adjective(TemplateProcessor):
         # 'суфф': '',  # if set, this text is added to all forms (probably HTML, so error out)
     }
 
-    def run(self, param_getter):
-        self.apply_params(param_getter, self.parameters)
-        self.parser.primary_form = 'nom-sg-m'
+    re_zel_parser = re.compile(r'^_прил ru ([0-9][a-z])$')
+    def run(self, parser, param_getter):
+        z_type =None
+        adj_type =None
+        adj_rank =None
+        for header, template, params in parser.data_section:
+            if header != 'etymology':
+                continue
+            m = self.re_zel_parser.match(template)
+            if not m:
+                continue
+            if z_type:
+                raise ValueError('Multiple adj found')
+            z_type = m.group(1)
+            # качественное, относительное, притяжательное
+            adj_type = params['тип'] if 'тип' in params else None
+            adj_rank = params['степень'] if 'степень' in params else None
+
+        if z_type:
+            self.create_claim(parser, '', z_type, P_INFLECTION_CLASS, Q_ZAL_ADJ_CLASSES, zal_normalizations)
+
+        self.apply_params(parser, param_getter, self.parameters)
+        parser.primary_form = 'nom-sg-m'
+
+    def param_to_form(self, parser, param, param_getter, features) -> None:
+        param_value = param_getter(param)
+        if param != 'ins-sg-f' or ' ' not in param_value:
+            return super(Adjective, self).param_to_form(parser, param, param_getter, features)
+
+        words = parser.split_words(param_value, 2)
+        parser.create_form(param, words[0], features)
+        parser.create_form(param + '2', words[1], features)

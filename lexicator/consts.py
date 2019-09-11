@@ -99,6 +99,12 @@ word_types = {
     'multi-word space-separated': re.compile(rf'^[{RUSSIAN_ALHABET_STRESS}]+( [{RUSSIAN_ALHABET_STRESS}]+)+$'),
 }
 
+re_file = re.compile(r'^[^<>]+\.(ogg|wav|mp3)$')
+
+# From http://www.internationalphoneticalphabet.org/ipa-charts/ipa-symbols-with-unicode-decimal-and-hex-codes/
+IPA_SYMBOLS = '⁽⁾()abcdefghijklmnopqrstuvwxyzɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞ɫ↓↑→↗↘\u0325\u030A\u0324\u032A\u032C\u0330\u033A\u033C\u033B\u031A\u0339\u0303\u031C\u031F\u0320\u0308\u0334\u033D\u031D\u0329\u031E\u032F\u0318\u0319\u0306\u030B\u0301\u0304\u0300\u030F\u035C\u0361'
+re_IPA_str = re.compile(rf'^[{IPA_SYMBOLS}]+$')
+
 
 # re_extra_templates = r'^([tT]emplate|[шШ]аблон):(' + '|'.join(['падежи', 'кавычки']) + ')$'
 
@@ -123,51 +129,55 @@ def double_title_case(dataset: Union[set, dict]):
 
 
 root_templates = {
-    'abbrev': 'abbreviation',
-    'прил': 'adjective',  # прилагательное
-    'форма-прил': 'adjective',  # прилагательное
-    'наречие': 'adverb',
-    'adv ru': 'adverb',  # наречие
-    'conj ru': 'conjunction',  # союз
-    'interj ru': 'interjection',  # междометие
-    'interj-ru': 'interjection',  # междометие
-    'inflection сущ ru': 'noun',
-    'сущ ru': 'noun',
-    'сущ-ru': 'noun',
-    'топоним': 'noun',
-    'фам': 'noun',
-    'Фам-блок': 'noun',
-    'гидроним': 'noun',
-    'форма-сущ': 'noun',
-    'Форма-числ': 'number',
-    'числ': 'number',
-    'числ ru 7-8-десят': 'number',
-    'числ-5': 'number',
-    'onomatop ru': 'onomatop',
-    'прич.': 'participle',  # причастие
-    'форма-прич': 'participle',  # причастие
-    'part ru': 'particle',  # частица
-    'predic ru': 'predicate',  # сказуемое
-    'prep ru': 'preposition',  # предлог
-    'Форма-мест': 'pro-form',  # местоимение
-    'suffix ru': 'suffix',
-    'гл ru': 'verb',
-    'Гл-блок': 'verb',
-    'спряжения': 'verb',
-    'форма-гл': 'verb',
-    'деепр ru': 'transgressive',  # деепричастие
-    'дееприч.': 'transgressive',  # деепричастие
+    k: None if not v else {v} if isinstance(v, str) else v for k, v in {
+        'abbrev': 'abbreviation',
+        'прил': {'adjective', 'participle'},  # прилагательное, причастие
+        'форма-прил': 'adjective',  # прилагательное
+        'наречие': 'adverb',
+        'adv ru': 'adverb',  # наречие
+        'conj ru': 'conjunction',  # союз
+        'interj ru': 'interjection',  # междометие
+        'interj-ru': 'interjection',  # междометие
+        'inflection сущ ru': 'noun',
+        'сущ ru': 'noun',
+        'сущ-ru': 'noun',
+        'топоним': 'noun',
+        'фам': 'noun',
+        'Фам-блок': 'noun',
+        'гидроним': 'noun',
+        'форма-сущ': 'noun',
+        'Форма-числ': 'number',
+        'числ': 'number',
+        'числ ru 7-8-десят': 'number',
+        'числ-5': 'number',
+        'onomatop ru': 'onomatopoeia',
+        'прич.': 'participle',  # причастие
+        'форма-прич': 'participle',  # причастие
+        'part ru': 'particle',  # частица
+        'predic ru': 'predicate',  # сказуемое
+        'prep ru': 'preposition',  # предлог
+        'Форма-мест': 'pro-form',  # местоимение
+        'suffix ru': 'suffix',
+        'гл ru': 'verb',
+        'Гл-блок': 'verb',
+        'спряжения': 'verb',
+        'форма-гл': 'verb',
+        'деепр ru': 'transgressive',  # деепричастие
+        'дееприч.': 'transgressive',  # деепричастие
 
-    '-ся': '', '=': '', 'alt': '', 'anim': '', 'cf': '', 'morph': '', 'phrase': '',
-    'transcription-ru': '', 'transcriptions-ru': '', 'астроним': '', 'действие': '',
-    'илл': '', 'медиа': '', 'морфема': '', 'морфо': '', 'морфо-ru': '', 'не путать': '', 'омонимы': '', 'омофоны': '',
-    'омоформы': '', 'омоформы02': '', 'орфоэпия': '', 'падежи': '', 'превосх.': '', 'свойство': '', 'собств.': '',
-    'сокращ': '', 'сравн.': '', 'страд.': '', 'также': '', 'не так': '',
-    'актанты': '', 'intro ru': '', 'init': '', 'неё': '', 'степени сравнения': '', 'совершить': '', 'См': '',
-    'transcription': '', 'множ.': '', 'по-слогам': '', 'по слогам': '', 'падежи ru 1': '', 'падежи ru m n f pl': '',
-    'слоги': '',
-
+        '-ся': '', '=': '', 'alt': '', 'anim': '', 'cf': '', 'morph': '', 'phrase': '', 'transcription-ru': '',
+        'transcriptions-ru': '', 'астроним': '', 'действие': '', 'илл': '', 'медиа': '', 'морфема': '', 'морфо': '',
+        'морфо-ru': '', 'не путать': '', 'омонимы': '', 'омофоны': '', 'омоформы': '', 'омоформы02': '', 'орфоэпия': '',
+        'падежи': '', 'превосх.': '', 'свойство': '', 'собств.': '', 'сокращ': '', 'сравн.': '', 'страд.': '',
+        'также': '', 'не так': '', 'актанты': '', 'intro ru': '', 'init': '', 'неё': '', 'степени сравнения': '',
+        'совершить': '', 'См': '', 'transcription': '', 'множ.': '', 'по-слогам': '', 'по слогам': '',
+        'падежи ru 1': '', 'падежи ru m n f pl': '', 'слоги': '', 'Лексема в Викиданных': '',
+    }.items()
 }
+
+template_to_type = [
+    (re.compile(r'^_прич .*'), {'participle'}),
+]
 
 re_template_name_suspect = re.compile(r'^(([tT]emplate|[шШ]аблон):)?[сС]ущ[ _]')
 re_root_templates = re.compile('|'.join((title_case_re(v) for v in root_templates)))

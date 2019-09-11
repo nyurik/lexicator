@@ -2,39 +2,35 @@ from abc import ABC, abstractmethod
 from typing import List, Callable, Union
 
 from lexicator.Properties import Property, ClaimValue, Q_FEATURES
-from lexicator.ResolverViaMwParse import json_key
+from lexicator.consts import root_templates
 
 
 class TemplateProcessorBase(ABC):
-    def __init__(self, template: str, parser) -> None:
+    def __init__(self, template: str, is_primary: bool = False) -> None:
         self.template = template
-        self.parser = parser
+        self.is_primary = is_primary
 
     @abstractmethod
-    def process(self, params):
+    def process(self, parser, params):
         pass
 
 
 class TemplateProcessor(TemplateProcessorBase, ABC):
 
-    def __init__(self, template: str, parser, known_params: List[str],
-                 require_forms: bool, expects_type: str = None) -> None:
-        super().__init__(template, parser)
+    def __init__(self, template: str, known_params: List[str], is_primary: bool = False) -> None:
+        super().__init__(template, is_primary)
         self.known_params = known_params
-        self.require_forms = require_forms
-        self.expects_type = expects_type
+        self.expects_type = root_templates[template] if template in root_templates else None
 
-    def process(self, params):
-        if self.expects_type and self.parser.grammar_type != self.expects_type:
-            raise ValueError(f"lexeme expected to be '{self.expects_type}', but set to {self.parser.grammar_type}")
+    def process(self, parser, params):
+        if self.expects_type and parser.grammar_type not in self.expects_type:
+            raise ValueError(f"lexeme expected to be '{self.expects_type}', but set to {parser.grammar_type}")
 
-        if ('forms' in self.parser.result) != self.require_forms:
+        if ('forms' in parser.result) == self.is_primary:
             raise ValueError(
-                f"forms have {'not yet' if self.require_forms else 'already'} been created for {self.template}")
+                f"forms have {'not yet' if not self.is_primary else 'already'} been created for {self.template}")
 
-        if self.template in self.parser.resolvers:
-            params = self.parser.resolvers[self.template].get(json_key(self.template, params)).data
-
+        params = parser.resolve_lua(self.template, params)
         for p in params:
             if p not in self.known_params:
                 raise ValueError(f"Unknown parameter {p}={params[p]} in {self.template}")
@@ -50,13 +46,13 @@ class TemplateProcessor(TemplateProcessorBase, ABC):
             except KeyError:
                 return None
 
-        self.run(param_getter)
+        self.run(parser, param_getter)
 
         not_done = set(params.keys()) - done_params
         if not_done:
-            raise ValueError(f"Unrecognized parameters:\n" + '\n'.join((f'* {k}={params[k]}' for k in not_done)))
+            raise ValueError(f"Unrecognized parameters:\n" + '\n'.join((f'  * {k}={params[k]}' for k in not_done)))
 
-    def apply_params(self, param_getter, param_definitions):
+    def apply_params(self, parser, param_getter, param_definitions):
         forms = None
         for param in param_definitions:
             param_value = param_getter(param)
@@ -72,25 +68,35 @@ class TemplateProcessor(TemplateProcessorBase, ABC):
 
             prop, q_map, param_map = definition
             if isinstance(prop, Property):
-                val = param_map[param_value] if param_map and param_value in param_map else param_value
-                if val not in q_map:
-                    raise ValueError(f"Unknown parameter value {param}={val}"
-                                     f"{f'(mapped from {param_value})' if param_value != val else ''}")
-                prop.set_claim_on_new(self.parser.result, ClaimValue(q_map[val]))
+                self.create_claim(parser, param, param_value, prop, q_map, param_map)
             elif prop == 'form':
                 if forms is None:
                     forms = []
-                    self.parser.result['forms'] = forms
+                    parser.result['forms'] = forms
 
-                self.param_to_form(param, param_getter, q_map)
+                self.param_to_form(parser, param, param_getter, q_map)
             else:
                 raise KeyError()
 
-    def param_to_form(self, param, param_getter, features):
-        param_value = param_getter(param)
-        features = [Q_FEATURES[v] for v in features]
-        self.parser.create_form(param, param_value, features)
+    @staticmethod
+    def create_claim(parser, param, param_value, prop, q_map, param_map):
+        val = param_map[param_value] if param_map and param_value in param_map else param_value
+        if val not in q_map:
+            raise ValueError(f"Unknown parameter value {param}={val}"
+                             f"{f'(mapped from {param_value})' if param_value != val else ''}")
+        prop.set_claim_on_new(parser.result, ClaimValue(q_map[val]))
+
+    def param_to_form(self, parser, param, param_getter, features) -> None:
+        parser.create_form(param, param_getter(param), features)
 
     @abstractmethod
-    def run(self, param_getter: Callable[[str, bool], Union[str, None]]):
+    def run(self, parser, param_getter: Callable[[str, bool], Union[str, None]]):
         pass
+
+    def get_index(self, parser):
+        state = parser.get_extra_state(self.template)
+        try:
+            state['index'] += 1
+        except KeyError:
+            state['index'] = 0
+        return state['index']

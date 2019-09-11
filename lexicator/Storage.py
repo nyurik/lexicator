@@ -1,8 +1,9 @@
 import os
 
+from lexicator.UpdateWiktionaryWithLexemeId import UpdateWiktionaryWithLexemeId
 from .utils import Config
 from .ResolverViaMwParse import ResolveNounRu, ResolveTranscriptionsRu, ResolveTranscriptionRu
-from .LexemeMaker import LexemeMaker
+from .PageToLexemsFilter import PageToLexemsFilter
 from .PageDownloader import DownloaderForWords, DownloaderForTemplates, LexemDownloader
 from .ContentStore import ContentStore
 from .PageParser import PageParser
@@ -40,10 +41,12 @@ class Storage:
 
         self.desired_lexemes = ContentStore(
             '_cache/expected_lexemes.db',
-            LexemeMaker(
+            PageToLexemsFilter(
                 config, self.parsed_wiki_words, config.wikidata,
                 {v.retriever.template_name: v for v in (
                     self.resolve_noun_ru,
                     self.resolve_transcription_ru,
                     self.resolve_transcriptions_ru,
                 )}))
+
+        self.wiktionary_updater = UpdateWiktionaryWithLexemeId(self.wiki_words, self.existing_lexemes, config)

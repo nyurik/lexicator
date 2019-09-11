@@ -21,43 +21,37 @@ class PageFilter(PageRetriever):
                    source: Iterable[str],
                    force: Union[bool, str],
                    progress_reporter: Callable[[str], None] = None) -> Iterable[PageContent]:
-        for page in self.source.get_multiple(source, force):
-            data, content = self._process_page(page, force)
-            if data is not None:
-                yield update_content(page, data, content)
-            if progress_reporter:
-                progress_reporter(page.title)
+        yield from self._iterate(self.source.get_multiple(source, force), force, progress_reporter)
 
     def get_all_titles(self,
                        progress_reporter: Callable[[str], None],
                        exclude: Dict[str, datetime] = None,
                        filters=None,
                        force: Union[bool, str] = None) -> Iterable[PageContent]:
-        for page in self.source.get_all(filters):
-            if not exclude or page.title not in exclude or exclude[page.title] < page.timestamp:
-                data, content = self._process_page(page, force)
-                if data is not None and content is not None:
-                    yield update_content(page, data, content)
-            progress_reporter(page.title)
+        yield from self._iterate((
+            page for page in self.source.get_all(filters)
+            if not exclude or page.title not in exclude or exclude[page.title] < page.timestamp
+        ), force, progress_reporter)
 
-    def _process_page(self, page: PageContent, force: Union[bool, str]):
-        try:
-            res = self.process_page(page, force)
-            return res if res is not None else (None, None)
-        except ValueError as err:
-            if self.config.print_warnings:
+    def _iterate(self, source, force, progress_reporter):
+        for page in source:
+            try:
+                res = self.process_page(page, force)
+                if res:
+                    yield res
+            except (ValueError, KeyError) as err:
+                if self.config.print_warnings:
+                    print(f"***** {page.title} ***** {'key not found' if isinstance(err, KeyError) else ''}: {err}")
+                    # raise
+                yield update_content(page, None, str(err))
+            except Exception as err:
                 print(f'***** {page.title} *****: {err}')
-            return None, str(err)
-        except KeyError as err:
-            if self.config.print_warnings:
-                print(f'***** {page.title} *****: Key not found: {err}')
-            return None, str(err)
-        except Exception as err:
-            print(f'***** {page.title} *****: {err}')
-            raise
+                raise
+            if progress_reporter:
+                progress_reporter(page.title)
 
     @abstractmethod
-    def process_page(self, page: PageContent, force: Union[bool, str]):
+    def process_page(self, page: PageContent, force: Union[bool, str]) -> PageContent:
         pass
 
     def refresh_source(self, progress, reporter):

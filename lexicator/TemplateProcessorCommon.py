@@ -1,39 +1,61 @@
+from typing import Callable
+
 from lexicator.TemplateUtils import test_str
-from lexicator.consts import re_russian_word
+from lexicator.consts import re_russian_word, STRESS_SYMBOLS
 from .TemplateProcessor import TemplateProcessor, TemplateProcessorBase
 from .Properties import *
 
 
-class TranscriptionRu(TemplateProcessor):
-    def __init__(self, template: str, parser) -> None:
-        super().__init__(template, parser, ['1', '2', 'lang'], True)
+def assert_lang(param_getter):
+    lang = param_getter('lang')
+    if lang and lang != 'ru':
+        raise ValueError(f"Unexpected lang={lang}")
 
-    def run(self, param_getter):
-        lang = param_getter('lang')
-        if lang and lang != 'ru':
-            raise ValueError(f"Unexpected lang={lang}")
-        self.parser.set_val(param_getter, '2', P_PRONUNCIATION_AUDIO, self.parser.primary_form)
-        self.parser.set_val(param_getter, '1', P_IPA_TRANSCRIPTION, self.parser.primary_form)
+
+class TranscriptionRu(TemplateProcessor):
+    def __init__(self, template: str) -> None:
+        super().__init__(template, ['1', '2', 'lang', 'источник', 'норма'])
+
+    def run(self, parser, param_getter: Callable[[str], str]):
+        assert_lang(param_getter)
+        index = self.get_index(parser)
+        parser.set_pronunciation_qualifier(
+            index, parser.primary_form, P_PRONUNCIATION_AUDIO, param_getter('2'), parser.validate_file)
+        parser.set_pronunciation_qualifier(
+            index, parser.primary_form, P_IPA_TRANSCRIPTION, param_getter('1'), parser.validate_ipa)
+
+        parser.set_pronunciation_reference(index, parser.primary_form, param_getter('источник'))
+
+        param_getter('норма')  # ignore
 
 
 class TranscriptionsRu(TemplateProcessor):
-    def __init__(self, template: str, parser) -> None:
-        super().__init__(template, parser, ['1', '2', '3', '4', 'мн2', 'lang'], True)
+    def __init__(self, template: str) -> None:
+        super().__init__(template, ['1', '2', '3', '4', 'мн2', 'lang', 'источник', 'норма'])
 
-    def run(self, param_getter):
-        lang = param_getter('lang')
-        if lang and lang != 'ru':
-            raise ValueError(f"Unexpected lang={lang}")
-        self.parser.set_val(param_getter, '3', P_PRONUNCIATION_AUDIO, 'nom-sg')
-        self.parser.set_val(param_getter, '4', P_PRONUNCIATION_AUDIO, 'nom-pl')
-        self.parser.set_val(param_getter, '1', P_IPA_TRANSCRIPTION, 'nom-sg')
-        self.parser.set_val(param_getter, '2', P_IPA_TRANSCRIPTION, 'nom-pl')
-        self.parser.set_val(param_getter, 'мн2', P_IPA_TRANSCRIPTION, 'nom-pl2')
+    def run(self, parser, param_getter: Callable[[str], str]):
+        assert_lang(param_getter)
+        index = self.get_index(parser)
+
+        parser.set_pronunciation_qualifier(
+            index, 'nom-sg', P_PRONUNCIATION_AUDIO, param_getter('3'), parser.validate_file)
+        parser.set_pronunciation_qualifier(
+            index, 'nom-sg', P_IPA_TRANSCRIPTION, param_getter('1'), parser.validate_ipa)
+        parser.set_pronunciation_qualifier(
+            index, 'nom-pl', P_PRONUNCIATION_AUDIO, param_getter('4'), parser.validate_file)
+        parser.set_pronunciation_qualifier(
+            index, 'nom-pl', P_IPA_TRANSCRIPTION, param_getter('2'), parser.validate_ipa)
+        parser.set_pronunciation_qualifier(
+            index, 'nom-pl2', P_IPA_TRANSCRIPTION, param_getter('мн2'), parser.validate_ipa)
+
+        parser.set_pronunciation_reference(index, 'nom-sg', param_getter('источник'))
+
+        param_getter('норма')  # ignore
 
 
 class Hyphenation(TemplateProcessorBase):
     # Parses {'1': 'а́', '2': '.', '3': 'ист'}, ignores '.', does some validation
-    def process(self, params):
+    def process(self, parser, params):
         parts = [params[str(v)] for v in sorted(params.keys(), key=lambda k: int(k))]
 
         new_parts = []
@@ -45,22 +67,22 @@ class Hyphenation(TemplateProcessorBase):
                 merge_next = True
             else:
                 if not re_russian_word.match(part):
-                    raise ValueError('syllable {part} does not seem to be a russian word')
+                    raise ValueError(f'syllable "{part}" does not seem to be a russian word')
                 if merge_next:
                     new_parts[-1] += part
                     merge_next = False
                 else:
                     new_parts.append(part)
 
-        new_value = '‧'.join(new_parts)
+        new_value = '‧'.join(new_parts).replace(STRESS_SYMBOLS, '')
         P_HYPHENATION.set_claim_on_new(
-            self.parser.form_by_param[self.parser.primary_form],
+            parser.form_by_param[parser.primary_form],
             ClaimValue(new_value))
 
 
 class PreReformSpelling(TemplateProcessorBase):
-    def process(self, params):
-        form = self.parser.form_by_param[self.parser.primary_form]
+    def process(self, parser, params):
+        form = parser.form_by_param[parser.primary_form]
         if RUSSIAN_PRE_REFORM_ID in form['representations']:
             raise ValueError(
                 f"{RUSSIAN_PRE_REFORM_ID} is already set on {form}. "

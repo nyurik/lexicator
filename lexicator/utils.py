@@ -99,3 +99,4 @@ class Config:
     wdqs: WikidataQueryService
     parse_fields: Union[Iterable[str], None]
     print_warnings: bool
+    verbose: bool

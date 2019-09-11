@@ -1,7 +1,8 @@
+from lexicator.consts import STRESS_SYMBOLS
 from .TemplateUtils import validate_zaliznyak1, validate_asterisk
 from .TemplateProcessor import TemplateProcessor
-from lexicator.Properties import P_GRAMMATICAL_GENDER, P_INFLECTION_CLASS, Q_ZAL_CLASSES, \
-    zal_normalizations, P_HAS_QUALITY, Q_FEATURES
+from .Properties import P_GRAMMATICAL_GENDER, P_INFLECTION_CLASS, Q_ZAL_NOUN_CLASSES, \
+    zal_normalizations, P_HAS_QUALITY, Q_FEATURES, P_WORD_STEM, ClaimValue, mono_value
 
 
 class Noun(TemplateProcessor):
@@ -20,14 +21,14 @@ class Noun(TemplateProcessor):
         'фам',
     ]
 
-    def __init__(self, template: str, parser) -> None:
+    def __init__(self, template: str) -> None:
         if template == 'inflection сущ ru':
             params = self.common_params
         elif template == 'сущ-ru':
             params = self.params2
         else:
             raise Exception(f'Unknown template {template}')
-        super().__init__(template, parser, params, False, expects_type='noun')
+        super().__init__(template, params, is_primary=True)
 
     parameters = {
         #
@@ -51,7 +52,7 @@ class Noun(TemplateProcessor):
             'а': 'adjectival',
             'мс': 'pronoun'
         }),
-        'зализняк': (P_INFLECTION_CLASS, Q_ZAL_CLASSES, zal_normalizations),
+        'зализняк': (P_INFLECTION_CLASS, Q_ZAL_NOUN_CLASSES, zal_normalizations),
         'зализняк1': validate_zaliznyak1,
         'кат': (P_HAS_QUALITY, Q_FEATURES, dict(
             одуш='animate',
@@ -84,24 +85,29 @@ class Noun(TemplateProcessor):
         # 'Сч':   # счётная форма
         'П': ('form', ('possessive',), None),  # словоформа притяжательного падежа
         # 'Пр':   # словоформа превратительного падежа
+        'слоги': None,  # todo: either use the param provided outside of this template, or this one
     }
 
-    def run(self, param_getter):
-        self.parser.primary_form = 'nom-sg'
-        self.apply_params(param_getter, self.parameters)
+    def run(self, parser, param_getter):
+        parser.primary_form = 'nom-sg'
+        self.apply_params(parser, param_getter, self.parameters)
 
-    def param_to_form(self, param, param_getter, features):
-        super().param_to_form(param, param_getter, features)
+        if 'основа' in parser.unhandled_params:
+            P_WORD_STEM.set_claim_on_new(parser.result, ClaimValue(
+                mono_value('ru', parser.validate_str(parser.unhandled_params['основа'].replace(STRESS_SYMBOLS, '')))))
+
+    def param_to_form(self, parser, param, param_getter, features):
+        super().param_to_form(parser, param, param_getter, features)
 
         second_form_key = param + '2'
         second_val = param_getter(second_form_key)
         if second_val:
-            self.parser.create_form(second_form_key, second_val, features)
+            parser.create_form(second_form_key, second_val, features)
 
 
 class UnknownNoun(TemplateProcessor):
-    def __init__(self, template: str, parser) -> None:
-        super().__init__(template, parser, ['2'], False)
+    def __init__(self, template: str) -> None:
+        super().__init__(template, ['2'], is_primary=True)
 
-    def run(self, param_getter):
+    def run(self, parser, param_getter):
         pass

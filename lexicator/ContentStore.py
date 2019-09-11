@@ -86,7 +86,10 @@ class ContentStore:
 
     def get_multiple(self, keys: Iterable[str], force=False) -> Iterable[PageContent]:
         self.init_retriever()
-        if not force or (self.retriever.is_remote and force == 'local'):
+        self_force = force
+        if force and isinstance(force, bool):
+            force = False
+        if not self_force or (self.retriever.is_remote and self_force == 'local'):
             not_found: Set[str] = set()
             for batch in batches(keys, 500):
                 keys_tried = set()
@@ -106,13 +109,12 @@ class ContentStore:
                 for key in redirect_keys:
                     print(f"Title {key} is a redirect loop")
                 if len(not_found) > 10000:
-                    yield from self.save_pages(self.retriever.get_titles(not_found))
+                    yield from self.save_pages(self.retriever.get_titles(not_found, force))
                     not_found.clear()
             keys = not_found
 
-        if force and isinstance(force, bool):
-            force = False
-        yield from self.save_pages(self.retriever.get_titles(keys, force=force))
+        if keys:
+            yield from self.save_pages(self.retriever.get_titles(keys, force=force))
 
     def read_object(self, key: str) -> PageContent:
         return self.get_raw_object(key).to_content()

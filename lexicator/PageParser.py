@@ -1,7 +1,8 @@
+import dataclasses
 import re
 from dataclasses import dataclass
 from html import unescape
-from typing import Dict, Iterable, Union
+from typing import Dict, Iterable, Union, List
 
 from mwparserfromhell import parse as mw_parse
 # noinspection PyProtectedMember
@@ -74,6 +75,7 @@ expand_template['Inflection сущ ru'] = expand_template['inflection сущ ru'
 
 well_known_parameters = {'слоги', 'дореф'}
 re_well_known_parameters = [re.compile(r'^\s*(' + word + r')\s*$') for word in well_known_parameters]
+re_allowed_extras = re.compile(r'^[и, \n/!]+$')
 
 
 class PageParser(PageFilter):
@@ -90,17 +92,18 @@ class PageParser(PageFilter):
         self.wiki_templates = wiki_templates
         self.templates_no_ns: Dict[str, PageContent] = {}
 
-    def process_page(self, page: PageContent, force: Union[bool, str]):
+    def process_page(self, page: PageContent, force: Union[bool, str]) -> PageContent:
         if page.content and re_known_headers.search(page.content) and (
                 re_template_names.search(page.content) or
                 re_root_templates.search(page.content)):
             state = ParserState(page, self.wiki_templates, self.templates_no_ns, force)
-            data = TemplateParser('', page.title, page.content, {}, state).parse_page()
+            TemplateParser('', page.title, page.content, {}, state).parse_page()
             if state.warnings:
                 print(f"Warnings for {page.title}:\n  " + '\n  '.join(state.warnings))
-                return data, '\n'.join(state.warnings)
+                content = '\n'.join(state.warnings)
             else:
-                return data, None
+                content = None
+            return dataclasses.replace(page, data=state.result, content=content)
 
 
 @dataclass
@@ -113,6 +116,8 @@ class ParserState:
         self.wiki_templates = wiki_templates
         self.templates_no_ns = templates_no_ns
         self.force = force
+        self.result = []
+        self.header: List[str] = None
 
     def get_template(self, name):
         if not self.templates_no_ns:
@@ -124,6 +129,9 @@ class ParserState:
             break
         self.templates_no_ns[name] = page
         return page
+
+    def add_result(self, name, params):
+        self.result.append((self.header[:], name, params,))
 
 
 class TemplateParser:
@@ -141,15 +149,13 @@ class TemplateParser:
         return code
 
     def parse_page(self):
-        result = []
         code = mw_parse(self.content)
 
         for ru_section in code.get_sections(levels=[1], matches=r'\{\{\s*-ru-\s*\}\}', include_headings=False):
-            header = []
-            self.parse_section(code, header, ru_section, result)
-        return result
+            self.state.header = []
+            self.parse_section(code, ru_section)
 
-    def parse_section(self, code, header, section, result):
+    def parse_section(self, code, section):
         for arg in section.filter(recursive=False):
             typ = type(arg)
             if typ in ignore_types:
@@ -167,7 +173,6 @@ class TemplateParser:
                 root_match = re_root_templates_full_str.match(name)
                 if root_match or re_template_names.match(name):
                     # Remove well-known params
-                    result_size = len(result)
                     for param in list(arg.params):
                         param_name = str(param.name)
                         for re_param in re_well_known_parameters:
@@ -177,41 +182,39 @@ class TemplateParser:
                             extras = ''
                             has_templates = False
                             for arg2 in param.value.filter(recursive=False):
-                                if type(arg2) == Text:
+                                argtyp = type(arg2)
+                                if argtyp == Text:
                                     extras += arg2.value
-                                elif type(arg2) == Template and str(arg2.name) in root_templates:
+                                elif argtyp == Template and str(arg2.name) in root_templates:
                                     has_templates = True
-                                else:
-                                    raise ValueError(f"cannot parse well known param {param}")
+                                elif argtyp == Wikilink:
+                                    extras += str(arg2.text) if arg2.text else str(arg2.title)
+                                elif argtyp != Comment:
+                                    raise ValueError(f"cannot parse well known param {str(param).strip()}")
                             extras = extras.strip()
-                            if has_templates and extras != '':
-                                raise ValueError(f"well known param '{param}' has text and templates")
+                            if has_templates and extras != '' and not re_allowed_extras.match(extras):
+                                raise ValueError(f"well known param '{str(param).strip()}' has text and templates")
                             if has_templates:
-                                self.parse_section(code, header, param.value, result)
+                                self.parse_section(code, param.value)
                             elif extras:
-                                result.append((header[:], '_' + m.group(1), param.value.strip(),))
+                                self.state.add_result('_' + m.group(1), param.value.strip())
                             arg.remove(param)
-                    result_size2 = len(result)
                     if root_match:
-                        result.append((header[:], name, params_to_dict(arg.params),))
+                        self.state.add_result(name, params_to_dict(arg.params))
                         code.remove(arg)
                     else:
                         new_arg = self.apply_value(code, arg)
-                        self.parse_section(code, header, new_arg, result)
-                    if result_size < result_size2 < len(result):
-                        new_items = result[result_size2:]
-                        del result[result_size2:]
-                        result[result_size:result_size] = new_items
+                        self.parse_section(code, new_arg)
 
                 elif name == 'к удалению':
                     return None  # ignore these pages
                 elif not re_ignore_template_prefixes.match(name):
-                    self.warn(f"{header} {self.word}: Unknown template {arg}")
+                    self.warn(f"{self.state.header} {self.word}: Unknown template {arg}")
             elif typ == Heading:
-                if len(header) < arg.level - 2:
-                    header += [None] * (arg.level - 2 - len(header))
+                if len(self.state.header) < arg.level - 2:
+                    self.state.header += [None] * (arg.level - 2 - len(self.state.header))
                 else:
-                    header = header[:arg.level - 2]
+                    self.state.header = self.state.header[:arg.level - 2]
                 self.apply_wikitext(arg.title)
                 template = None
                 templates = arg.title.filter_templates(recursive=False)
@@ -221,17 +224,17 @@ class TemplateParser:
                         template = {name: params_to_dict(templates[0].params)}
                         code.remove(templates[0])
                 if templates and not template:
-                    print(f"{header} {self.word} unrecognized header template in {arg.title}")
+                    print(f"{self.state.header} {self.word} unrecognized header template in {arg.title}")
                 text = str(arg.title).strip()
                 if template:
                     if text:
-                        print(f"{header} {self.word} has text '{text}' in addition to template {template}")
+                        print(f"{self.state.header} {self.word} has text '{text}' in addition to template {template}")
                         template['text'] = text
-                    header.append(template)
+                    self.state.header.append(template)
                 else:
-                    header.append(text)
+                    self.state.header.append(text)
             else:
-                self.warn(f"{header} {self.word}: Ha? {typ}  {arg}")
+                self.warn(f"{self.state.header} {self.word}: Ha? {typ}  {arg}")
 
     def apply_wikitext(self, code):
         if code:
@@ -298,9 +301,11 @@ class TemplateParser:
                 else:
                     template_page = self.state.get_template(name)
                     if template_page:
+                        sub_template_params = params_to_dict(arg.params)
+                        self.state.add_result('_' + name, sub_template_params)
                         new_text = TemplateParser(
                             f'{self.template_name}.{name}', self.word, template_page.content,
-                            params_to_dict(arg.params), self.state).run()
+                            sub_template_params, self.state).run()
                         new_arg = mw_parse(str(new_text).strip())
                         code.replace(arg, new_arg)
                         return new_arg
