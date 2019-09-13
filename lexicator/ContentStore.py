@@ -252,10 +252,12 @@ class ContentStore:
         self.db.add(info)
         self.db.commit()
 
-    def get_all(self, filters=None) -> Iterable[PageContent]:
+    def get_all(self, filters=None, order_by=None) -> Iterable[PageContent]:
         query = self.db.query(self.PageContentDb)
         if filters:
             query = query.filter(*filters)
+        if order_by:
+            query = query.order_by(*order_by)
         yield from (v.to_content() for v in query)
 
     def dump_to_file(self, filename: str,

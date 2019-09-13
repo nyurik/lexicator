@@ -1,6 +1,8 @@
 import re
 
-from lexicator.Properties import mono_value, zal_normalizations
+from typing import Callable, Union
+
+from lexicator.Properties import mono_value, zal_normalizations, P_HAS_QUALITY, ClaimValue
 
 
 def ru_mono(v):
@@ -22,7 +24,7 @@ def normalize(value, normalizations):
     return value
 
 
-def validate_zaliznyak1(value, param, param_getter):
+def validate_zaliznyak1(processor, parser, value, param, param_getter, params):
     val = param_getter('зализняк')
     if not val:
         raise ValueError(f'{param}={value}, but "зализняк" param is not set')
@@ -30,7 +32,7 @@ def validate_zaliznyak1(value, param, param_getter):
         raise ValueError(f'зализняк={val} and {param}={value} is not yet supported')
 
 
-def validate_asterisk(value, param, param_getter):
+def validate_asterisk(processor, parser, value, param, param_getter, params):
     expects = value == '1'
     z_val = param_getter('зализняк', False)
     if not z_val:
@@ -38,3 +40,23 @@ def validate_asterisk(value, param, param_getter):
     if ('*' not in z_val) == expects:
         raise ValueError(
             f'Value зализняк={z_val} is {"not " if expects else ""}expected to have a "*" when {param}={value}')
+
+
+def plurale_tantum(processor, parser, value, param, param_getter, params):
+    P_HAS_QUALITY.set_claim_on_new(parser.result, ClaimValue('Q138246'))
+
+
+def singularia_tantum(processor, parser, value, param, param_getter, params):
+    P_HAS_QUALITY.set_claim_on_new(parser.result, ClaimValue('Q604984'))
+
+
+def get_bool_param(param_getter: Union[str, Callable], param, mark_as_done=True) -> bool:
+    if callable(param_getter):
+        value = param_getter(param, mark_as_done)
+        if not value:
+            return False
+    else:
+        value = param_getter
+    if value != '1':
+        raise ValueError(f'invalid boolean parameter {param}={value}')
+    return True

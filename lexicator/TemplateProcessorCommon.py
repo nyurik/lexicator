@@ -1,7 +1,8 @@
 from typing import Callable
 
 from lexicator.TemplateUtils import test_str
-from lexicator.consts import re_russian_word, STRESS_SYMBOLS
+from lexicator.consts import re_russian_word
+from lexicator.utils import remove_stress
 from .TemplateProcessor import TemplateProcessor, TemplateProcessorBase
 from .Properties import *
 
@@ -16,7 +17,7 @@ class TranscriptionRu(TemplateProcessor):
     def __init__(self, template: str) -> None:
         super().__init__(template, ['1', '2', 'lang', 'источник', 'норма'])
 
-    def run(self, parser, param_getter: Callable[[str], str]):
+    def run(self, parser, param_getter: Callable[[str], str], params: dict):
         assert_lang(param_getter)
         index = self.get_index(parser)
         parser.set_pronunciation_qualifier(
@@ -33,14 +34,14 @@ class TranscriptionsRu(TemplateProcessor):
     def __init__(self, template: str) -> None:
         super().__init__(template, ['1', '2', '3', '4', 'мн2', 'lang', 'источник', 'норма'])
 
-    def run(self, parser, param_getter: Callable[[str], str]):
+    def run(self, parser, param_getter: Callable[[str], str], params: dict):
         assert_lang(param_getter)
         index = self.get_index(parser)
 
         parser.set_pronunciation_qualifier(
-            index, 'nom-sg', P_PRONUNCIATION_AUDIO, param_getter('3'), parser.validate_file)
+            index, parser.primary_form, P_PRONUNCIATION_AUDIO, param_getter('3'), parser.validate_file)
         parser.set_pronunciation_qualifier(
-            index, 'nom-sg', P_IPA_TRANSCRIPTION, param_getter('1'), parser.validate_ipa)
+            index, parser.primary_form, P_IPA_TRANSCRIPTION, param_getter('1'), parser.validate_ipa)
         parser.set_pronunciation_qualifier(
             index, 'nom-pl', P_PRONUNCIATION_AUDIO, param_getter('4'), parser.validate_file)
         parser.set_pronunciation_qualifier(
@@ -48,7 +49,7 @@ class TranscriptionsRu(TemplateProcessor):
         parser.set_pronunciation_qualifier(
             index, 'nom-pl2', P_IPA_TRANSCRIPTION, param_getter('мн2'), parser.validate_ipa)
 
-        parser.set_pronunciation_reference(index, 'nom-sg', param_getter('источник'))
+        parser.set_pronunciation_reference(index, parser.primary_form, param_getter('источник'))
 
         param_getter('норма')  # ignore
 
@@ -63,7 +64,7 @@ class Hyphenation(TemplateProcessorBase):
         for idx, part in enumerate(parts):
             if part == '.':
                 if (idx != 1 and idx != len(parts) - 2) or merge_next:
-                    raise ValueError('unexpected non-breaking syllable position {idx} in {parts}')
+                    print(f'{parser.title}: unexpected non-breaking syllable position {idx} in {parts}')
                 merge_next = True
             else:
                 if not re_russian_word.match(part):
@@ -74,7 +75,7 @@ class Hyphenation(TemplateProcessorBase):
                 else:
                     new_parts.append(part)
 
-        new_value = '‧'.join(new_parts).replace(STRESS_SYMBOLS, '')
+        new_value = remove_stress('‧'.join(new_parts))
         P_HYPHENATION.set_claim_on_new(
             parser.form_by_param[parser.primary_form],
             ClaimValue(new_value))

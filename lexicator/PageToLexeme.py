@@ -8,35 +8,31 @@ from .TemplateProcessorCommon import TranscriptionRu, TranscriptionsRu, PreRefor
     Hyphenation
 from .TemplateProcessorNouns import Noun, UnknownNoun
 from .TemplateUtils import test_str
-from .consts import root_templates, word_types, template_to_type, STRESS_SYMBOLS, re_file, re_IPA_str
-from .utils import PageContent, list_to_dict_of_lists
+from .consts import root_templates, word_types, template_to_type, re_file, re_IPA_str
+from .utils import PageContent, list_to_dict_of_lists, remove_stress
 
 
 class PageToLexeme:
 
-    def __init__(self, page, resolvers: Dict[str, 'ContentStore']) -> None:
-        self.page = page
-        self.title = page.title
+    def __init__(self, title, data_section, resolvers: Dict[str, 'ContentStore']) -> None:
+        self.title = title
+        self.data_section = data_section
         self.resolvers = resolvers
         self.word_type: str = None
         self.grammar_types = set()
 
-    def run(self) -> PageContent:
+    def run(self) -> Any:
         self.word_type = self.calc_word_type()
-        results = []
-        sections = list_to_dict_of_lists(self.page.data, key=lambda v: v[0][0] if v[0] and v[0][0] is not None else '')
-        for data_section in sections.values():
-            one_lexeme = LexemeParserState(self, data_section)
-            if one_lexeme.grammar_type in self.grammar_types:
-                raise ValueError(f'More than one {one_lexeme.grammar_type} found')
-            self.grammar_types.add(one_lexeme.grammar_type)
-            lex = one_lexeme.create_lexeme()
-            if lex:
-                results.append(lex)
+        one_lexeme = LexemeParserState(self, self.data_section)
+        if one_lexeme.grammar_type in self.grammar_types:
+            raise ValueError(f'More than one {one_lexeme.grammar_type} found')
+        self.grammar_types.add(one_lexeme.grammar_type)
 
-        if not results:
+        result = one_lexeme.create_lexeme()
+
+        if not result:
             raise ValueError('No lexemes found')
-        return dataclasses.replace(self.page, data=results, content=None)
+        return result
 
     def calc_word_type(self):
         for word_type, regex in word_types.items():
@@ -51,6 +47,7 @@ class PageToLexeme:
 
 
 known_headers = {
+    tuple(): 'root',
     ('Морфологические и синтаксические свойства',): 'etymology',
     ('Произношение',): 'pronunciation',
     ('Семантические свойства',): 'semantic',
@@ -219,7 +216,7 @@ class LexemeParserState:
     def create_form(self, form_name, word, features: List[str]):
         if 'forms' not in self.result:
             self.result['forms'] = []
-        stressless_word = word.replace(STRESS_SYMBOLS, '')
+        stressless_word = remove_stress(word)
         form = dict(
             add='',  # without this forms are not added
             representations=dict(

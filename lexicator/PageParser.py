@@ -12,7 +12,7 @@ from mwparserfromhell.nodes.extras import Parameter
 from lexicator.consts import root_header_templates, ignore_templates, re_ignore_template_prefixes
 from .ContentStore import ContentStore
 from .PageFilter import PageFilter
-from .consts import root_templates, NS_TEMPLATE, known_fields, re_template_names, \
+from .consts import root_templates, NS_TEMPLATE, re_template_names, \
     re_known_headers, re_root_templates, re_root_templates_full_str
 from .utils import PageContent, Config
 
@@ -81,14 +81,8 @@ re_allowed_extras = re.compile(r'^[и, \n/!]+$')
 class PageParser(PageFilter):
     # existing_entities: Dict[str, Dict[str, List]]
 
-    def __init__(self,
-                 config: Config,
-                 source: ContentStore,
-                 parse_fields: Iterable[str],
-                 wiki_templates: ContentStore,
-                 ) -> None:
+    def __init__(self, config: Config, source: ContentStore, wiki_templates: ContentStore) -> None:
         super().__init__(config, source)
-        self.fields = set(v for v in known_fields if v.name in parse_fields) if parse_fields else known_fields
         self.wiki_templates = wiki_templates
         self.templates_no_ns: Dict[str, PageContent] = {}
 

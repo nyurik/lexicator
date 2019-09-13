@@ -1,5 +1,6 @@
 import dataclasses
 import json
+import unicodedata
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -14,6 +15,7 @@ from urllib3.util.retry import Retry
 
 # template-name, params-dict (or none)
 from lexicator import WikidataQueryService
+from lexicator.consts import STRESS_SYMBOL_PRI, STRESS_SYMBOL_SEC
 
 TemplateType = NewType('TemplateType', Tuple[str, Union[Dict[str, str], None]])
 
@@ -91,12 +93,16 @@ def params_to_wikitext(template):
     return str(Template(template[0], params=[Parameter(k, v) for k, v in template[1].items()]))
 
 
+def remove_stress(word):
+    return unicodedata.normalize(
+        'NFC', unicodedata.normalize('NFD', word).replace(STRESS_SYMBOL_PRI, '').replace(STRESS_SYMBOL_SEC, ''))
+
+
 @dataclass
 class Config:
     use_bot_limits: bool
     wiktionary: Site
     wikidata: Site
     wdqs: WikidataQueryService
-    parse_fields: Union[Iterable[str], None]
     print_warnings: bool
     verbose: bool

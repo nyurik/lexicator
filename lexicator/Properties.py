@@ -266,6 +266,7 @@ Q_FEATURES = {
     # Numbers
     'singular': 'Q110786',
     'plural': 'Q146786',
+    'rare-form': 'Q55094451',
 
     # Cases
     'nominative': 'Q131105',  # именительный
@@ -302,7 +303,10 @@ Q_FEATURES = {
 }
 
 Q_ZAL_ADJ_CLASSES = {
+    '1a': 'Q67397478',
 }
+
+
 Q_ZAL_NOUN_CLASSES = {
     '0': 'Q66712697',
     '1*a': 'Q66716618',

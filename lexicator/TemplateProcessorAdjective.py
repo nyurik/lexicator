@@ -6,7 +6,7 @@ from .TemplateProcessor import TemplateProcessor
 
 
 def validate_flag(params_to_check, enable=False):
-    def validate(value, param, param_getter):
+    def validate(processor, parser, value, param, param_getter, params):
         for param in params_to_check:
             val = param_getter(param, False)
             if (val is None) == enable:
@@ -85,7 +85,8 @@ class Adjective(TemplateProcessor):
     }
 
     re_zel_parser = re.compile(r'^_прил ru ([0-9][a-z])$')
-    def run(self, parser, param_getter):
+
+    def run(self, parser, param_getter, params: dict):
         z_type =None
         adj_type =None
         adj_rank =None
@@ -105,7 +106,7 @@ class Adjective(TemplateProcessor):
         if z_type:
             self.create_claim(parser, '', z_type, P_INFLECTION_CLASS, Q_ZAL_ADJ_CLASSES, zal_normalizations)
 
-        self.apply_params(parser, param_getter, self.parameters)
+        self.apply_params(parser, param_getter, self.parameters, params)
         parser.primary_form = 'nom-sg-m'
 
     def param_to_form(self, parser, param, param_getter, features) -> None:

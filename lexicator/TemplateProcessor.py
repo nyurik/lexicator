@@ -22,7 +22,7 @@ class TemplateProcessor(TemplateProcessorBase, ABC):
         self.known_params = known_params
         self.expects_type = root_templates[template] if template in root_templates else None
 
-    def process(self, parser, params):
+    def process(self, parser, raw_params):
         if self.expects_type and parser.grammar_type not in self.expects_type:
             raise ValueError(f"lexeme expected to be '{self.expects_type}', but set to {parser.grammar_type}")
 
@@ -30,7 +30,10 @@ class TemplateProcessor(TemplateProcessorBase, ABC):
             raise ValueError(
                 f"forms have {'not yet' if not self.is_primary else 'already'} been created for {self.template}")
 
-        params = parser.resolve_lua(self.template, params)
+        params = parser.resolve_lua(self.template, raw_params)
+        if not params:
+            return  # Skip templates with no parameters
+
         for p in params:
             if p not in self.known_params:
                 raise ValueError(f"Unknown parameter {p}={params[p]} in {self.template}")
@@ -46,13 +49,13 @@ class TemplateProcessor(TemplateProcessorBase, ABC):
             except KeyError:
                 return None
 
-        self.run(parser, param_getter)
+        self.run(parser, param_getter, params)
 
         not_done = set(params.keys()) - done_params
         if not_done:
             raise ValueError(f"Unrecognized parameters:\n" + '\n'.join((f'  * {k}={params[k]}' for k in not_done)))
 
-    def apply_params(self, parser, param_getter, param_definitions):
+    def apply_params(self, parser, param_getter, param_definitions, params: dict):
         forms = None
         for param in param_definitions:
             param_value = param_getter(param)
@@ -63,7 +66,7 @@ class TemplateProcessor(TemplateProcessorBase, ABC):
                 continue  # ignore this parameter
 
             if callable(definition):
-                definition(param_value, param, param_getter)
+                definition(self, parser, param_value, param, param_getter, params)
                 continue
 
             prop, q_map, param_map = definition
@@ -83,14 +86,14 @@ class TemplateProcessor(TemplateProcessorBase, ABC):
         val = param_map[param_value] if param_map and param_value in param_map else param_value
         if val not in q_map:
             raise ValueError(f"Unknown parameter value {param}={val}"
-                             f"{f'(mapped from {param_value})' if param_value != val else ''}")
+                             f"{f' (mapped from {param_value})' if param_value != val else ''}")
         prop.set_claim_on_new(parser.result, ClaimValue(q_map[val]))
 
     def param_to_form(self, parser, param, param_getter, features) -> None:
         parser.create_form(param, param_getter(param), features)
 
     @abstractmethod
-    def run(self, parser, param_getter: Callable[[str, bool], Union[str, None]]):
+    def run(self, parser, param_getter: Callable[[str, bool], Union[str, None]], params: dict):
         pass
 
     def get_index(self, parser):

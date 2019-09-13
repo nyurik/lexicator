@@ -59,14 +59,19 @@ class ResolverViaMwParse(PageRetriever):
             vals = {str(i): (v, json.loads(v)) for i, v in enumerate(batch)}
             wikitext = ''
             for ind, val in vals.items():
-                wikitext += f"* _INDEX_={ind}\n"
                 t_name, = val[1]
                 if t_name != self.template_name:
                     raise ValueError(f"Unexpected template name {t_name} instead of {self.template_name}")
                 t_params = val[1][t_name]
-                wikitext += params_to_wikitext(
-                    (t_name, {k: t_params[k] for k in t_params if k not in self.ignore_params}))
-                wikitext += '\n'
+                t_params2 = {k: t_params[k] for k in t_params if k not in self.ignore_params}
+                if t_params:
+                    wikitext += f"* _INDEX_={ind}\n"
+                    wikitext += params_to_wikitext((t_name, t_params2))
+                    wikitext += '\n'
+                else:
+                    yield PageContent(title=val[0], timestamp=datetime.utcnow(), data={})
+            if not wikitext:
+                continue
             wikitext += f"* _INDEX_=END\n"
 
             print(f"API: resolving {len(batch)} templates, text len={len(wikitext):,}, starting with {batch[0]}")

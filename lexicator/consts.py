@@ -1,4 +1,5 @@
 import re
+import unicodedata
 from dataclasses import dataclass
 from typing import Callable, Union
 
@@ -13,58 +14,6 @@ NS_LEXEME = 146
 
 HTML_BR_TAGS = {'<br>', '<br >', '<br/>', '<br />'}
 
-
-@dataclass
-class Field:
-    name: str
-    alt: str = None
-    required: bool = True
-    parser: Callable[[Wikicode], None] = None
-
-
-known_fields = [
-    # именительный
-    Field('Кто/что? (ед)', alt='nom-sg'), Field('nom-sg2', required=False),
-    Field('Кто/что? (мн)', alt='nom-pl'), Field('nom-pl2', required=False),
-    # родительный
-    Field('Нет кого/чего? (ед)', alt='gen-sg'), Field('gen-sg2', required=False),
-    Field('Нет кого/чего? (мн)', alt='gen-pl'), Field('gen-pl2', required=False),
-    # дательный
-    Field('Кому/чему? (ед)', alt='dat-sg'), Field('dat-sg2', required=False),
-    Field('Кому/чему? (мн)', alt='dat-pl'), Field('dat-pl2', required=False),
-    # винительный
-    Field('Кого/что? (ед)', alt='acc-sg'), Field('acc-sg2', required=False),
-    Field('Кого/что? (мн)', alt='acc-pl'), Field('acc-pl2', required=False),
-    # творительный
-    Field('Кем/чем? (ед)', alt='ins-sg'), Field('ins-sg2', required=False),
-    Field('Кем/чем? (мн)', alt='ins-pl'), Field('ins-pl2', required=False),
-    # предложный
-    Field('О ком/чём? (ед)', alt='prp-sg'), Field('prp-sg2', required=False),
-    Field('О ком/чём? (мн)', alt='prp-pl'), Field('prp-pl2', required=False),
-
-    Field('loc-sg', required=False),  # словоформа местного падежа
-    Field('voc-sg', required=False),  # словоформа звательного падежа
-    Field('prt-sg', required=False),  # словоформа разделительного падежа
-    Field('Сч', required=False),  # счётная форма
-    Field('П', required=False),  # словоформа притяжательного падежа
-    Field('Пр', required=False),  # словоформа превратительного падежа
-
-    Field('скл', required=False),
-    Field('слоги', required=False),
-    Field('кат', required=False),
-    Field('зализняк', required=False),
-    Field('род', required=False),
-    Field('pt', required=False),
-    Field('st', required=False),
-]
-
-remove_on_st = ['acc-pl', 'dat-pl', 'gen-pl', 'ins-pl', 'nom-pl', 'prp-pl',
-                'acc-pl2', 'dat-pl2', 'gen-pl2', 'ins-pl2', 'nom-pl2', 'prp-pl2']
-
-remove_on_pt = ['acc-sg', 'dat-sg', 'gen-sg', 'ins-sg', 'nom-sg', 'prp-sg',
-                'acc-sg2', 'dat-sg2', 'gen-sg2', 'ins-sg2', 'nom-sg2', 'prp-sg2']
-
-is_required_fld = {f.alt or f.name: f.required for f in known_fields}
 
 re_template_names = re.compile(
     r'^(([tT]emplate|[шШ]аблон):)?' +
@@ -85,10 +34,15 @@ re_template_names = re.compile(
     r'|[кК]ол[ _]чис '
     r')')
 
+RUSSIAN_STRESSABLE_LETTERS = 'аАеЕиИоОуУэЭюЮяЯ'
 RUSSIAN_ALPHABET = 'аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ'
 RUSSIAN_ALPHABET_EXT = 'ѕЅіІѣѡѠѢѧѦѩѨѫѪѭѬѯѮѱѰѳѲѵѴ'
-STRESS_SYMBOLS = '\u0301'
-RUSSIAN_ALHABET_STRESS = RUSSIAN_ALPHABET + STRESS_SYMBOLS
+STRESS_SYMBOL_PRI = '\u0301'
+STRESS_SYMBOL_SEC = '\u0300'
+RUSSIAN_ALHABET_STRESS = \
+    RUSSIAN_ALPHABET + STRESS_SYMBOL_PRI + STRESS_SYMBOL_SEC + unicodedata.normalize(
+        'NFC',
+        ''.join(((v + STRESS_SYMBOL_PRI + v + STRESS_SYMBOL_SEC) for v in RUSSIAN_STRESSABLE_LETTERS)))
 
 re_russian_word_suspect = re.compile(f'[{RUSSIAN_ALPHABET}{RUSSIAN_ALPHABET_EXT}]')
 
@@ -102,7 +56,7 @@ word_types = {
 re_file = re.compile(r'^[^<>]+\.(ogg|wav|mp3)$')
 
 # From http://www.internationalphoneticalphabet.org/ipa-charts/ipa-symbols-with-unicode-decimal-and-hex-codes/
-IPA_SYMBOLS = '⁽⁾()abcdefghijklmnopqrstuvwxyzɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞ɫ↓↑→↗↘\u0325\u030A\u0324\u032A\u032C\u0330\u033A\u033C\u033B\u031A\u0339\u0303\u031C\u031F\u0320\u0308\u0334\u033D\u031D\u0329\u031E\u032F\u0318\u0319\u0306\u030B\u0301\u0304\u0300\u030F\u035C\u0361'
+IPA_SYMBOLS = '‿⁽⁾()abcdefghijklmnopqrstuvwxyzɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞ɫ↓↑→↗↘\u0325\u030A\u0324\u032A\u032C\u0330\u033A\u033C\u033B\u031A\u0339\u0303\u031C\u031F\u0320\u0308\u0334\u033D\u031D\u0329\u031E\u032F\u0318\u0319\u0306\u030B\u0301\u0304\u0300\u030F\u035C\u0361'
 re_IPA_str = re.compile(rf'^[{IPA_SYMBOLS}]+$')
 
 

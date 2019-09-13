@@ -25,7 +25,7 @@ class Storage:
 
         self.parsed_wiki_words = ContentStore(
             '_cache/parsed_ru.wiktionary.db',
-            PageParser(config, self.wiki_words, config.parse_fields, self.wiki_templates))
+            PageParser(config, self.wiki_words, self.wiki_templates))
 
         self.resolve_noun_ru = ContentStore(
             '_cache/resolve_noun_ru.db',
@@ -37,7 +37,7 @@ class Storage:
 
         self.resolve_transcriptions_ru = ContentStore(
             '_cache/resolve_transcriptions_ru.db',
-            ResolveTranscriptionsRu(config,  self.parsed_wiki_words))
+            ResolveTranscriptionsRu(config, self.parsed_wiki_words))
 
         self.desired_lexemes = ContentStore(
             '_cache/expected_lexemes.db',
@@ -50,3 +50,10 @@ class Storage:
                 )}))
 
         self.wiktionary_updater = UpdateWiktionaryWithLexemeId(self.wiki_words, self.existing_lexemes, config)
+
+    def delete_pages(self, pages):
+        if isinstance(pages, str):
+            pages = [pages]
+        for val in self.__dict__.values():
+            if isinstance(val, ContentStore):
+                val.delete_pages(pages)
