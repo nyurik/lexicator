@@ -1,6 +1,9 @@
 # lexicator
 Imports Wiktionary's grammatical data into Wikidata
 
+## ATTENTION
+This description is outdated and needs to be rewritten. The [main.py](main.py) needs some love too.
+
 ## Usage
 
 Install Python 3.7 or later, clone this repo, and run these commands:
