@@ -2,7 +2,7 @@
 Imports Wiktionary's grammatical data into Wikidata
 
 ## ATTENTION
-This description is outdated and needs to be rewritten. The [main.py](main.py) needs some love too.
+This description is outdated and needs to be rewritten. The main [lexicator.py](lexicator.py) file also needs some love.
 
 ## Usage
 
