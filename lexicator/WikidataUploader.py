@@ -7,6 +7,18 @@ from .utils import to_json, PageContent
 import traceback
 
 presets = {
+    'планочка': 'L105457',
+    'Один': 'L111111',
+    'обречённость': 'L121093',
+    'марш': 'L121212',
+    'повторение': 'L112233',
+    'вальс': 'L123123',
+    'пароль': 'L123456',
+    'символ': 'L128128',
+    'энтропийность': 'L138064',
+    'радость': 'L142857',
+    'заряд': 'L160217',
+    'золотце': 'L161803',
 }
 
 pause_before = {'L' + str(int(v[1:]) - 4) for v in presets.values()}
@@ -40,7 +52,8 @@ class WikidataUploader:
                     not page.content and \
                     page.title.lower() == page.title and \
                     page.title < 'яяяяяя' and \
-                    page.title not in self.existing:
+                    page.title not in self.existing and \
+                    page.title not in presets:
                 try:
                     self._run_one_page(self.desired_lexemes.get(page.title, 'local'))
                 except Exception as err:
@@ -70,7 +83,7 @@ class WikidataUploader:
                 self._run_one_page(self.desired_lexemes.get(custom_run[lex_id]))
                 # exit(1)
             self.wiktionary_updater.add_or_update_lexeme(word, lexeme_idx, lex_id)
-            sleep(1)
+            sleep(0.2)
         # else:
         #     self.update(self.existing[word], lexeme_data)
 

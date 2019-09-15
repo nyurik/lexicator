@@ -2,6 +2,7 @@
 .password
 archive
 /_cache
+/todo
 
 ### Python template
 # Byte-compiled / optimized / DLL files

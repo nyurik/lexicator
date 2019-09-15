@@ -2,7 +2,7 @@ from lexicator.utils import remove_stress
 from .TemplateUtils import validate_zaliznyak1, validate_asterisk, plurale_tantum, singularia_tantum, get_bool_param
 from .TemplateProcessor import TemplateProcessor
 from .Properties import P_GRAMMATICAL_GENDER, P_INFLECTION_CLASS, Q_ZAL_NOUN_CLASSES, \
-    zal_normalizations, P_HAS_QUALITY, Q_FEATURES, P_WORD_STEM, ClaimValue, mono_value
+    ZAL_NOUN_NORMALIZATION, P_HAS_QUALITY, Q_FEATURES, P_WORD_STEM, ClaimValue, mono_value
 
 
 class Noun(TemplateProcessor):
@@ -52,7 +52,7 @@ class Noun(TemplateProcessor):
             'а': 'adjectival',
             'мс': 'pronoun'
         }),
-        'зализняк': (P_INFLECTION_CLASS, Q_ZAL_NOUN_CLASSES, zal_normalizations),
+        'зализняк': (P_INFLECTION_CLASS, Q_ZAL_NOUN_CLASSES, ZAL_NOUN_NORMALIZATION),
         'зализняк1': validate_zaliznyak1,
         'кат': (P_HAS_QUALITY, Q_FEATURES, dict(
             одуш='animate',
@@ -114,9 +114,7 @@ class Noun(TemplateProcessor):
         parser.primary_form = 'nom-sg' if not is_pt else 'nom-pl'
         self.apply_params(parser, param_getter, self.parameters, params)
 
-        if 'основа' in parser.unhandled_params:
-            P_WORD_STEM.set_claim_on_new(parser.result, ClaimValue(
-                mono_value('ru', parser.validate_str(remove_stress(parser.unhandled_params['основа'])))))
+        parser.add_stem()
 
     def param_to_form(self, parser, param, param_getter, features):
         if param == 'loc-sg':

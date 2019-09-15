@@ -62,7 +62,7 @@ class WikipageDownloader(PageRetriever):
                    progress_reporter: Callable[[str], None] = None) -> Iterable[PageContent]:
         if not self.site:
             return []
-        for batch in batches(source, 50):
+        for batch in batches(source, 250 if self.config.use_bot_limits else 50):
             print(f"API: query {len(batch)} titles: [{', '.join(batch[:3])}{', ...' if len(batch) > 3 else ''}]")
             for query in self.site.query(**self.download_titles_query, titles=batch, redirects=self.follow_redirects):
                 if 'pages' in query:
@@ -137,7 +137,8 @@ class DownloaderForWords(WikipageDownloader):
                 print(f"API: query all content from allpages generator from namespace {self.namespace}")
                 pages_with_content = dict(**self.download_titles_query, generator='allpages',
                                           gapnamespace=self.namespace,
-                                          gaplimit='50', gapfilterredir='nonredirects')
+                                          gaplimit=200 if self.config.use_bot_limits else 50,
+                                          gapfilterredir='nonredirects')
                 for page in self.site.query_pages(**pages_with_content):
                     val = self.to_content(page)
                     if val.title and (not exclude or (val.title not in exclude or exclude[val.title] < val.timestamp)):

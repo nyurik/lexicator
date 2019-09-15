@@ -36,7 +36,10 @@ def get_site(host: str) -> Site:
     session = requests.Session()
     session.mount('https://', HTTPAdapter(max_retries=retries))
 
-    return Site(f'https://{host}/w/api.php', session=session, json_object_hook=AttrDict)
+    site = Site(f'https://{host}/w/api.php', session=session, json_object_hook=AttrDict)
+    site.auto_post_min_size = 1500
+
+    return site
 
 
 def list_to_dict_of_lists(items, key, item_extractor=None):

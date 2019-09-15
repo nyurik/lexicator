@@ -48,9 +48,6 @@ def flag_template(self: 'TemplateParser', code, template: Template, flag, index=
 
 
 custom_templates = {
-    # 'по-слогам': syllables,
-    # 'по слогам': syllables,
-    # 'слоги': syllables2,
     '-': lambda s, c, t: c.replace(t, '\u00a0— '),
     'PAGENAME': lambda s, c, t: c.replace(t, s.word),
     'NAMESPACE': lambda s, c, t: c.remove(t),

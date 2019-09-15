@@ -6,9 +6,10 @@ from lexicator.consts import root_templates
 
 
 class TemplateProcessorBase(ABC):
-    def __init__(self, template: str, is_primary: bool = False) -> None:
+    def __init__(self, template: str, is_primary: bool = False, autorun: bool = True) -> None:
         self.template = template
         self.is_primary = is_primary
+        self.autorun = autorun
 
     @abstractmethod
     def process(self, parser, params):
@@ -17,8 +18,8 @@ class TemplateProcessorBase(ABC):
 
 class TemplateProcessor(TemplateProcessorBase, ABC):
 
-    def __init__(self, template: str, known_params: List[str], is_primary: bool = False) -> None:
-        super().__init__(template, is_primary)
+    def __init__(self, template: str, known_params: List[str], is_primary: bool = False, autorun: bool = True) -> None:
+        super().__init__(template, is_primary, autorun)
         self.known_params = known_params
         self.expects_type = root_templates[template] if template in root_templates else None
 

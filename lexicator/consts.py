@@ -14,7 +14,6 @@ NS_LEXEME = 146
 
 HTML_BR_TAGS = {'<br>', '<br >', '<br/>', '<br />'}
 
-
 re_template_names = re.compile(
     r'^(([tT]emplate|[шШ]аблон):)?' +
     r'('
@@ -86,7 +85,6 @@ root_templates = {
     k: None if not v else {v} if isinstance(v, str) else v for k, v in {
         'abbrev': 'abbreviation',
         'прил': {'adjective', 'participle'},  # прилагательное, причастие
-        'форма-прил': 'adjective',  # прилагательное
         'наречие': 'adverb',
         'adv ru': 'adverb',  # наречие
         'conj ru': 'conjunction',  # союз
@@ -99,23 +97,18 @@ root_templates = {
         'фам': 'noun',
         'Фам-блок': 'noun',
         'гидроним': 'noun',
-        'форма-сущ': 'noun',
-        'Форма-числ': 'number',
         'числ': 'number',
         'числ ru 7-8-десят': 'number',
         'числ-5': 'number',
         'onomatop ru': 'onomatopoeia',
         'прич.': 'participle',  # причастие
-        'форма-прич': 'participle',  # причастие
         'part ru': 'particle',  # частица
         'predic ru': 'predicate',  # сказуемое
         'prep ru': 'preposition',  # предлог
-        'Форма-мест': 'pro-form',  # местоимение
         'suffix ru': 'suffix',
         'гл ru': 'verb',
         'Гл-блок': 'verb',
         'спряжения': 'verb',
-        'форма-гл': 'verb',
         'деепр ru': 'transgressive',  # деепричастие
         'дееприч.': 'transgressive',  # деепричастие
 
@@ -220,6 +213,7 @@ ignore_templates = {
     'эл.-техн.', 'эл.-энерг.', 'электр.', 'энтом.', 'энтомол.', 'эррат.', 'ЭСБЕ', 'ЭСРЯ МГУ', 'ЭССЯ2', 'этимология',
     'этимология:', 'этимология:варроатоз', 'этимология:вода', 'этимология:Ярило', 'этногр.', 'этнол.', 'этнолог.',
     'ювел.', 'юр.', 'юрид.', 'ЯИ', 'ЯН', 'ЯРГ',
+    'Форма-мест', 'форма-гл', 'форма-прил', 'форма-сущ', 'Форма-числ', 'форма-прич','эзот.', 'тех.жарг.',
 }
 
 double_title_case(ignore_templates)

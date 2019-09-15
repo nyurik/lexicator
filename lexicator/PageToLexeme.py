@@ -1,15 +1,13 @@
-import dataclasses
-
 from .Properties import *
 from .ResolverViaMwParse import json_key
 from .TemplateProcessor import TemplateProcessorBase
-from .TemplateProcessorAdjective import Adjective
+from .TemplateProcessorAdjective import Adjective, Participle
 from .TemplateProcessorCommon import TranscriptionRu, TranscriptionsRu, PreReformSpelling, \
     Hyphenation
 from .TemplateProcessorNouns import Noun, UnknownNoun
 from .TemplateUtils import test_str
 from .consts import root_templates, word_types, template_to_type, re_file, re_IPA_str
-from .utils import PageContent, list_to_dict_of_lists, remove_stress
+from .utils import remove_stress
 
 
 class PageToLexeme:
@@ -114,10 +112,10 @@ class LexemeParserState:
             key=data_section_sorter)
 
         for header, template, params in self.data_section:
-            if template not in templates:
+            if template not in templates or not templates[template].autorun:
                 self.unhandled_params.update(params)
             else:
-                templates[template].process(self, params)
+                self.run_template(template, params)
 
         set_imported_from_wkt(self.result)
         for typ in ['senses', 'forms']:
@@ -128,7 +126,7 @@ class LexemeParserState:
         return self.result
 
     def get_grammar_type(self):
-        grammar_type = None
+        grammar_type: Set = None
 
         def add_types(typ):
             if typ:
@@ -245,14 +243,13 @@ class LexemeParserState:
             raise ValueError(f'Unexpected number of words, should be {count_expected} - {words}')
         return words
 
-    #
-    # def add_syllables(self, params):
-    #     syllables = params('слоги')
-    #     if syllables is not None:
-    #         P_HYPHENATION.set_claim_on_new(self.form_by_param['nom-sg'], ClaimValue(test_str(syllables)))
-    #         if 'nom-sg2' in self.form_by_param:
-    #             print(f"Word {self.title} has two 'nom-sg' forms, skipping second hyphenation")
+    def run_template(self, template, params):
+        templates[template].process(self, params)
 
+    def add_stem(self):
+        if 'основа' in self.unhandled_params:
+            P_WORD_STEM.set_claim_on_new(self.result, ClaimValue(
+                mono_value('ru', self.validate_str(remove_stress(self.unhandled_params['основа'])))))
 
 templates: Dict[str, TemplateProcessorBase] = {k: v(k) for k, v in {
     'transcription-ru': TranscriptionRu,
@@ -263,4 +260,5 @@ templates: Dict[str, TemplateProcessorBase] = {k: v(k) for k, v in {
     'прил': Adjective,
     'по-слогам': Hyphenation,
     '_дореф': PreReformSpelling,
+    '_прич ru': Participle,
 }.items()}

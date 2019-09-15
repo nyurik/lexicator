@@ -34,7 +34,7 @@ class UpdateWiktionaryWithLexemeId:
                 raise
 
     def add_or_update_lexeme(self, word: str, lexeme_idx: int, lexeme_id: str):
-        page = self.wiki_words.get(word, 'all')
+        page = self.wiki_words.get(word, 'all' if lexeme_idx > 0 else False)
         if not page:
             raise ValueError(f'Page {word} does not exist')
         lex_link = f'{{{{{LEX_TEMPLATE}|{lexeme_id}}}}}'
@@ -90,7 +90,7 @@ class UpdateWiktionaryWithLexemeId:
         code.insert_after(placeholder, '\n' + lex_link)
         desired_content = str(code)
         if page.content != desired_content:
-            summary = f'добавлена ссылка на Лексему [[d:Lexeme:{lexeme_id}]]'
+            summary = f'добавлена ссылка на лексему [[d:Lexeme:{lexeme_id}]]'
             if inside_meaning is not None:
                 summary += f' значение {lexeme_idx + 1}'
             result = self.site(
@@ -100,6 +100,7 @@ class UpdateWiktionaryWithLexemeId:
                 token=self.site.token(),
                 text=desired_content,
                 basetimestamp=page.timestamp,
+                starttimestamp=page.timestamp,
                 bot=True,
                 minor=True,
                 nocreate=True,

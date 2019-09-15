@@ -27,7 +27,7 @@ class PageToLexemsFilter(PageFilter):
         data_section = []
         has_first_section = False
         for row in page.data:
-            if row[1] == '_заголовок':
+            if row[1] == '_заголовок' or row[1] == '_з':
                 if not has_first_section:
                     has_first_section = True
                 else:

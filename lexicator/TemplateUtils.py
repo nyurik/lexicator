@@ -2,7 +2,7 @@ import re
 
 from typing import Callable, Union
 
-from lexicator.Properties import mono_value, zal_normalizations, P_HAS_QUALITY, ClaimValue
+from lexicator.Properties import mono_value, ZAL_NOUN_NORMALIZATION, P_HAS_QUALITY, ClaimValue
 
 
 def ru_mono(v):
@@ -28,7 +28,7 @@ def validate_zaliznyak1(processor, parser, value, param, param_getter, params):
     val = param_getter('зализняк')
     if not val:
         raise ValueError(f'{param}={value}, but "зализняк" param is not set')
-    if normalize(val, zal_normalizations) != normalize(value, zal_normalizations):
+    if normalize(val, ZAL_NOUN_NORMALIZATION) != normalize(value, ZAL_NOUN_NORMALIZATION):
         raise ValueError(f'зализняк={val} and {param}={value} is not yet supported')
 
 

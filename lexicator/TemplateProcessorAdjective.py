@@ -1,7 +1,8 @@
 import re
 
-from lexicator.Properties import Q_FEATURES, P_INFLECTION_CLASS, Q_ZAL_NOUN_CLASSES, zal_normalizations, \
-    Q_ZAL_ADJ_CLASSES
+from lexicator.Properties import Q_FEATURES, P_INFLECTION_CLASS, Q_ZAL_NOUN_CLASSES, ZAL_NOUN_NORMALIZATION, \
+    Q_ZAL_ADJ_CLASSES, ZAL_ADJ_NORMALIZATIONS, P_HAS_QUALITY, P_WORD_STEM, ClaimValue, mono_value
+from lexicator.utils import remove_stress
 from .TemplateProcessor import TemplateProcessor
 
 
@@ -87,9 +88,9 @@ class Adjective(TemplateProcessor):
     re_zel_parser = re.compile(r'^_прил ru ([0-9][a-z])$')
 
     def run(self, parser, param_getter, params: dict):
-        z_type =None
-        adj_type =None
-        adj_rank =None
+        z_type = None
+        adj_type = None
+        adj_rank = None
         for header, template, params in parser.data_section:
             if header != 'etymology':
                 continue
@@ -104,10 +105,11 @@ class Adjective(TemplateProcessor):
             adj_rank = params['степень'] if 'степень' in params else None
 
         if z_type:
-            self.create_claim(parser, '', z_type, P_INFLECTION_CLASS, Q_ZAL_ADJ_CLASSES, zal_normalizations)
+            self.create_claim(parser, '', z_type, P_INFLECTION_CLASS, Q_ZAL_ADJ_CLASSES, ZAL_ADJ_NORMALIZATIONS)
 
         self.apply_params(parser, param_getter, self.parameters, params)
         parser.primary_form = 'nom-sg-m'
+        parser.add_stem()
 
     def param_to_form(self, parser, param, param_getter, features) -> None:
         param_value = param_getter(param)
@@ -117,3 +119,37 @@ class Adjective(TemplateProcessor):
         words = parser.split_words(param_value, 2)
         parser.create_form(param, words[0], features)
         parser.create_form(param + '2', words[1], features)
+
+
+class Participle(TemplateProcessor):
+    def __init__(self, template: str) -> None:
+        super().__init__(
+            template,
+            ['hide-text', 'nocat', 'вид', 'время', 'дореф', 'залог', 'коммент', 'склонение', 'склонение', 'слоги',
+             'соотв', 'соотв-мн', ], is_primary=False)
+
+    parameters = {
+        'время': (P_HAS_QUALITY, Q_FEATURES, dict(
+            прош='past tense',  # прошедшего времени
+            наст='present tense',  # настоящего времени
+            буд='future tense',  # настоящего времени
+        )),
+
+        'вид': (P_HAS_QUALITY, Q_FEATURES, dict(
+            несов='imperfective aspect',  # несовершенный вид
+            н='imperfective aspect',
+            сов='perfective aspect',  # совершенный вид
+            с='perfective aspect',
+        )),
+
+        'залог': (P_HAS_QUALITY, Q_FEATURES, dict(
+            действ='active voice',  # действительный залог
+            страд='passive voice',  # страдательный залог
+            возвр='reflexive voice',  # возвратный залог
+        )),
+
+        'склонение': (P_INFLECTION_CLASS, Q_ZAL_ADJ_CLASSES, ZAL_ADJ_NORMALIZATIONS),  # 1a
+    }
+
+    def run(self, parser, param_getter, params: dict):
+        self.apply_params(parser, param_getter, self.parameters, params)

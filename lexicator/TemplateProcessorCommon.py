@@ -57,7 +57,9 @@ class TranscriptionsRu(TemplateProcessor):
 class Hyphenation(TemplateProcessorBase):
     # Parses {'1': 'а́', '2': '.', '3': 'ист'}, ignores '.', does some validation
     def process(self, parser, params):
-        parts = [params[str(v)] for v in sorted(params.keys(), key=lambda k: int(k))]
+        parts = [params[str(v)] for v in sorted(
+            (v for v in params.keys() if v != 'коммент'),
+            key=lambda k: int(k))]
 
         new_parts = []
         merge_next = False
