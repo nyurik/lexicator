@@ -1,8 +1,7 @@
 import re
 
-from lexicator.Properties import Q_FEATURES, P_INFLECTION_CLASS, Q_ZAL_NOUN_CLASSES, ZAL_NOUN_NORMALIZATION, \
-    Q_ZAL_ADJ_CLASSES, ZAL_ADJ_NORMALIZATIONS, P_HAS_QUALITY, P_WORD_STEM, ClaimValue, mono_value
-from lexicator.utils import remove_stress
+from lexicator.Properties import Q_FEATURES, P_INFLECTION_CLASS, Q_ZAL_ADJ_CLASSES, P_HAS_QUALITY
+from lexicator.TemplateUtils import normalize_zal
 from .TemplateProcessor import TemplateProcessor
 
 
@@ -85,7 +84,7 @@ class Adjective(TemplateProcessor):
         # 'суфф': '',  # if set, this text is added to all forms (probably HTML, so error out)
     }
 
-    re_zel_parser = re.compile(r'^_прил ru ([0-9][a-z])$')
+    re_zel_parser = re.compile(r'^_прил ru ([0-9][a-z]?)$')
 
     def run(self, parser, param_getter, params: dict):
         z_type = None
@@ -105,7 +104,13 @@ class Adjective(TemplateProcessor):
             adj_rank = params['степень'] if 'степень' in params else None
 
         if z_type:
-            self.create_claim(parser, '', z_type, P_INFLECTION_CLASS, Q_ZAL_ADJ_CLASSES, ZAL_ADJ_NORMALIZATIONS)
+            self.create_claim(parser, '', z_type, P_INFLECTION_CLASS, Q_ZAL_ADJ_CLASSES, normalize_zal)
+        else:
+            raise ValueError('unable to find adjective Z type')
+        if adj_type:
+            raise ValueError(f"not implemented: тип={adj_type} is set but not used by the adjective processor")
+        if adj_rank:
+            raise ValueError(f"not implemented: степень={adj_rank} is set but not used by the adjective processor")
 
         self.apply_params(parser, param_getter, self.parameters, params)
         parser.primary_form = 'nom-sg-m'
@@ -148,7 +153,7 @@ class Participle(TemplateProcessor):
             возвр='reflexive voice',  # возвратный залог
         )),
 
-        'склонение': (P_INFLECTION_CLASS, Q_ZAL_ADJ_CLASSES, ZAL_ADJ_NORMALIZATIONS),  # 1a
+        'склонение': (P_INFLECTION_CLASS, Q_ZAL_ADJ_CLASSES, normalize_zal),
     }
 
     def run(self, parser, param_getter, params: dict):

@@ -1,10 +1,11 @@
 import os
 
 from lexicator.UpdateWiktionaryWithLexemeId import UpdateWiktionaryWithLexemeId
+from lexicator.WikidataUploader import WikidataUploader
 from .utils import Config
 from .ResolverViaMwParse import ResolveNounRu, ResolveTranscriptionsRu, ResolveTranscriptionRu
 from .PageToLexemsFilter import PageToLexemsFilter
-from .PageDownloader import DownloaderForWords, DownloaderForTemplates, LexemDownloader
+from .PageDownloader import DownloaderForWords, DownloaderForTemplates, LexemeDownloader
 from .ContentStore import ContentStore
 from .PageParser import PageParser
 
@@ -21,7 +22,7 @@ class Storage:
             DownloaderForWords(config))
         self.existing_lexemes = ContentStore(
             '_cache/wikidata-raw-lexemes.db',
-            LexemDownloader(config))
+            LexemeDownloader(config))
 
         self.parsed_wiki_words = ContentStore(
             '_cache/parsed_ru.wiktionary.db',
@@ -50,6 +51,9 @@ class Storage:
                 )}))
 
         self.wiktionary_updater = UpdateWiktionaryWithLexemeId(self.wiki_words, self.existing_lexemes, config)
+
+        self.lexeme_creator = WikidataUploader(config.wikidata, self.desired_lexemes, self.existing_lexemes,
+                                               self.wiktionary_updater)
 
     def delete_pages(self, pages):
         if isinstance(pages, str):

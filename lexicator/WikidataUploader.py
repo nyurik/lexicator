@@ -1,4 +1,6 @@
 from time import sleep
+import json
+from typing import Set
 
 from .UpdateWiktionaryWithLexemeId import UpdateWiktionaryWithLexemeId
 from .Properties import Q_PART_OF_SPEECH
@@ -7,22 +9,14 @@ from .utils import to_json, PageContent
 import traceback
 
 presets = {
-    'планочка': 'L105457',
-    'Один': 'L111111',
-    'обречённость': 'L121093',
-    'марш': 'L121212',
-    'повторение': 'L112233',
-    'вальс': 'L123123',
-    'пароль': 'L123456',
-    'символ': 'L128128',
-    'энтропийность': 'L138064',
-    'радость': 'L142857',
-    'заряд': 'L160217',
-    'золотце': 'L161803',
 }
 
 pause_before = {'L' + str(int(v[1:]) - 4) for v in presets.values()}
 custom_run = {'L' + str(int(v[1:]) - 1): k for k, v in presets.items()}
+
+allowed_types = {Q_PART_OF_SPEECH[t] for t in [
+    'noun',
+]}
 
 
 class WikidataUploader:
@@ -36,9 +30,16 @@ class WikidataUploader:
         self.__existing = None
 
     @property
-    def existing(self):
+    def existing(self) -> Set[str]:
         if self.__existing is None:
-            self.__existing = {p.data: p for p in self.existing_lexemes.get_all()}
+            self.__existing = {json.loads(p[0]) for p in self.existing_lexemes.get_all(
+                filters=[
+                    self.existing_lexemes.PageContentDb.redirect.is_(None),
+                    self.existing_lexemes.PageContentDb.content.isnot(None),
+                ],
+                columns=[
+                    self.existing_lexemes.PageContentDb.data,
+                ])}
         return self.__existing
 
     def run(self):
@@ -47,31 +48,42 @@ class WikidataUploader:
 
         print(list(self.desired_lexemes.get_multiple(presets.keys())))
 
-        for page in self.desired_lexemes.get_all(order_by=[self.desired_lexemes.PageContentDb.title]):
-            if page.data and \
-                    not page.content and \
-                    page.title.lower() == page.title and \
-                    page.title < 'яяяяяя' and \
-                    page.title not in self.existing and \
-                    page.title not in presets:
+        for page in self.desired_lexemes.get_all(
+                filters=[
+                    self.desired_lexemes.PageContentDb.data.isnot(None),
+                    # self.desired_lexemes.PageContentDb.content.is_(None),
+                    self.desired_lexemes.PageContentDb.redirect.is_(None),
+                ],
+                order_by=[self.desired_lexemes.PageContentDb.title]):
+            if (
+                    page.data is not None and
+                    # page.content is None and
+                    page.redirect is None and
+                    page.title.lower() == page.title and
+                    page.title < 'яяяяяя' and
+                    page.title not in self.existing and
+                    page.title not in presets and
+                    any(('lexicalCategory' in v and v['lexicalCategory'] in allowed_types for v in page.data))
+            ):
+                # page.content is None
                 try:
-                    self._run_one_page(self.desired_lexemes.get(page.title, 'local'))
+                    self._run_one_page(page.title, self.desired_lexemes.get(page.title, 'local'))
                 except Exception as err:
                     print(f"Error processing {page.title}: {err}")
                     traceback.print_exc()
                     sleep(30)
 
     def run_one(self, word):
-        self._run_one_page(self.desired_lexemes.get(word, 'all'))
+        self._run_one_page(word, self.desired_lexemes.get(word, 'all'))
 
-    def _run_one_page(self, page):
+    def _run_one_page(self, word, page):
         for lexeme_idx, lexeme_data in enumerate(page.data):
-            self._run_one_lexeme(page, lexeme_idx, lexeme_data)
+            self._run_one_lexeme(word, page, lexeme_idx, lexeme_data)
 
-    def _run_one_lexeme(self, page, lexeme_idx, lexeme_data):
-        word = lexeme_data['lemmas']['ru']['value']
-        if lexeme_data['lexicalCategory'] != Q_PART_OF_SPEECH['noun'] and word not in presets:
-            return
+    def _run_one_lexeme(self, word, page, lexeme_idx, lexeme_data):
+        if word != lexeme_data['lemmas']['ru']['value']:
+            raise ValueError(f"Unable to create word {word} - lexeme is for {lexeme_data['lemmas']['ru']['value']}")
+        print(f"Creating {word} {f'#{lexeme_idx}' if lexeme_idx > 0 else ''}")
         lex_id = self.edit_entity(
             lexeme_data,
             f'Importing from ru.wiktionary [[wikt:ru:{page.title}|{page.title}]] using [[User:Yurik/Lexicator|Lexicator]]',
@@ -80,10 +92,9 @@ class WikidataUploader:
             if lex_id in pause_before:
                 sleep(5)
             if lex_id in custom_run:
-                self._run_one_page(self.desired_lexemes.get(custom_run[lex_id]))
-                # exit(1)
+                custom_word = custom_run[lex_id]
+                self._run_one_page(custom_word, self.desired_lexemes.get(custom_word))
             self.wiktionary_updater.add_or_update_lexeme(word, lexeme_idx, lex_id)
-            sleep(0.2)
         # else:
         #     self.update(self.existing[word], lexeme_data)
 

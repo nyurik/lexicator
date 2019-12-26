@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timedelta
-from typing import Iterable, Callable, Set
+from typing import Iterable, Callable, Set, Union
 
 from pywikiapi import to_timestamp
 from sqlalchemy import Column, Integer, Unicode, UnicodeText, DateTime
@@ -47,7 +47,7 @@ class ContentStore:
                     revid=content.revid,
                     user=content.user,
                     redirect=content.redirect,
-                    data=to_compact_json(content.data) if content.data else None,
+                    data=to_compact_json(content.data) if content.data is not None else None,
                     content=content.content,
                 )
 
@@ -80,9 +80,12 @@ class ContentStore:
             self.retriever_initialized = True
 
     def get(self, key: str, force=False) -> PageContent:
-        for v in self.get_multiple([key], force):
-            return v
-        raise KeyError(key)
+        results = list(self.get_multiple([key], force))
+        if len(results) > 1:
+            raise ValueError(f'Multiple pages for key = {key}')
+        if not results or results[0].is_deleted():
+            raise KeyError(key)
+        return results[0]
 
     def get_multiple(self, keys: Iterable[str], force=False) -> Iterable[PageContent]:
         self.init_retriever()
@@ -114,7 +117,10 @@ class ContentStore:
             keys = not_found
 
         if keys:
-            yield from self.save_pages(self.retriever.get_titles(keys, force=force))
+            yield from (
+                v for v in self.save_pages(self.retriever.get_titles(keys, force=force))
+                if not v.redirect or not self.retriever.follow_redirects
+            )
 
     def read_object(self, key: str) -> PageContent:
         return self.get_raw_object(key).to_content()
@@ -126,8 +132,14 @@ class ContentStore:
 
     def save_pages(self, pages: Iterable[PageContent]) -> Iterable[PageContent]:
         result = []
+        delete = []
         for batch in batches(pages, 200):
-            new_pages = {v.title: v for v in batch}
+            new_pages = {}
+            for v in batch:
+                if v.is_deleted():
+                    delete.append(v.title)
+                else:
+                    new_pages[v.title] = v
             for page in self.db.query(self.PageContentDb).filter(self.PageContentDb.title.in_(new_pages.keys())):
                 new_page = new_pages.pop(page.title)
                 page.title = new_page.title
@@ -136,13 +148,14 @@ class ContentStore:
                 page.revid = new_page.revid
                 page.user = new_page.user
                 page.redirect = new_page.redirect
-                page.data = to_compact_json(new_page.data)
+                page.data = to_compact_json(new_page.data) if new_page.data is not None else None
                 page.content = new_page.content
                 result.append(new_page)
             for new_page in new_pages.values():
                 self.db.add(self.PageContentDb(new_page))
                 result.append(new_page)
             self.db.commit()
+        self.delete_pages(delete)
         return result
 
     def delete_pages(self, delete):
@@ -153,16 +166,21 @@ class ContentStore:
     def store_object(self, value: PageContent) -> None:
         self.save_pages([value])
 
-    def refresh(self, filters=None) -> Iterable[str]:
-        return self._track_progress(self.refresher, filters)
+    def refresh(self, filters=None, delta: Union[timedelta, bool] = None) -> Iterable[str]:
+        return self._track_progress(self.refresher, filters, delta)
 
-    def refresher(self, progress, reporter, filters) -> Iterable[str]:
+    def refresher(self, progress, reporter, filters, delta: Union[timedelta, bool]) -> Iterable[str]:
         if not self.can_refresh():
             raise ValueError(f"Unable to refresh {self.filename}")
 
         start_ts = datetime.utcnow()
         self.init_retriever()
         last_change = self.get_last_change()
+        if delta:
+            if isinstance(delta, timedelta):
+                last_change -= delta
+            else:
+                last_change = None
         if self.retriever_source and last_change:
             ret_ts = self.retriever_source.get_last_change()
             if last_change >= ret_ts:
@@ -180,10 +198,11 @@ class ContentStore:
         for batch in batches(source, 500):
             self.save_pages(batch)
             for v in batch:
-                progress['saved'] += 1
-                if v.timestamp and (not last_change or v.timestamp > last_change):
-                    last_change = v.timestamp
-                titles.add(v.title)
+                if not v.is_deleted():
+                    progress['saved'] += 1
+                    if v.timestamp and (not last_change or v.timestamp > last_change):
+                        last_change = v.timestamp
+                    titles.add(v.title)
 
         if delete:
             self.delete_pages(delete)
@@ -192,7 +211,7 @@ class ContentStore:
         if self.retriever_source:
             self.set_last_change(self.retriever_source.get_last_change())
         else:
-            self.set_last_change(max(last_change, start_ts - timedelta(minutes=1)))
+            self.set_last_change(last_change - timedelta(minutes=5))
 
         return titles
 
@@ -252,13 +271,22 @@ class ContentStore:
         self.db.add(info)
         self.db.commit()
 
-    def get_all(self, filters=None, order_by=None) -> Iterable[PageContent]:
+    def get_all(self, filters=None, order_by=None, columns=None) -> Iterable[PageContent]:
         query = self.db.query(self.PageContentDb)
-        if filters:
+        if filters is not None:
+            if not isinstance(filters, list):
+                filters = [filters]
             query = query.filter(*filters)
-        if order_by:
+        if order_by is not None:
+            if not isinstance(order_by, list):
+                order_by = [order_by]
             query = query.order_by(*order_by)
-        yield from (v.to_content() for v in query)
+        if columns is not None:
+            if not isinstance(columns, list):
+                columns = [columns]
+            yield from query.with_entities(*columns)
+        else:
+            yield from (v.to_content() for v in query)
 
     def dump_to_file(self, filename: str,
                      page_filter: Callable[[PageContent], bool] = None,
@@ -305,6 +333,6 @@ class ContentStore:
     def can_refresh(self) -> bool:
         return self.retriever.can_refresh()
 
-    def custom_refresh(self, *filters):
-        for _ in self.get_multiple(self.retriever.custom_refresh(*filters)):
+    def custom_refresh(self, filters=None):
+        for _ in self.get_multiple(self.retriever.custom_refresh(filters)):
             pass

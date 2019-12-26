@@ -2,7 +2,7 @@ import dataclasses
 import re
 from dataclasses import dataclass
 from html import unescape
-from typing import Dict, Iterable, Union, List
+from typing import Dict, Union, List
 
 from mwparserfromhell import parse as mw_parse
 # noinspection PyProtectedMember
@@ -112,7 +112,8 @@ class ParserState:
 
     def get_template(self, name):
         if not self.templates_no_ns:
-            self.templates_no_ns.update({v.title.split(':', 1)[1]: v for v in self.wiki_templates.get_all()})
+            self.templates_no_ns.update(
+                {v.title.split(':', 1)[1]: v for v in self.wiki_templates.get_all() if ':' in v.title})
         if not self.force and name in self.templates_no_ns:
             return self.templates_no_ns[name]
         page = None
@@ -122,6 +123,8 @@ class ParserState:
         return page
 
     def add_result(self, name, params):
+        if isinstance(params, dict):
+            params = {k: unescape(v) for k, v in params.items()}
         self.result.append((self.header[:], name, params,))
 
 
@@ -156,8 +159,7 @@ class TemplateParser:
                 name = str(arg.name).strip()
                 if name in ignore_templates:
                     continue
-                if name.startswith('Шаблон:') or name.startswith('шаблон:'):
-                    name = name[len('шаблон:'):]
+                name = self.to_template_name(name)
                 if name in ignore_templates:
                     continue
 
@@ -195,7 +197,8 @@ class TemplateParser:
                         code.remove(arg)
                     else:
                         new_arg = self.apply_value(code, arg)
-                        self.parse_section(code, new_arg)
+                        if new_arg:
+                            self.parse_section(code, new_arg)
 
                 elif name == 'к удалению':
                     return None  # ignore these pages
@@ -227,6 +230,15 @@ class TemplateParser:
             else:
                 self.warn(f"{self.state.header} {self.word}: Ha? {typ}  {arg}")
 
+    @staticmethod
+    def to_template_name(name):
+        if name.startswith('Шаблон:') or name.startswith('шаблон:'):
+            return name[len('шаблон:'):]
+        elif name.startswith('Template:') or name.startswith('template:'):
+            return name[len('template:'):]
+        else:
+            return name
+
     def apply_wikitext(self, code):
         if code:
             # print(str(code).replace('\n', '\\n')[:100])
@@ -247,7 +259,7 @@ class TemplateParser:
                 code.replace(arg, str(arg.default).strip())
         elif typ == Template:
             self.apply_wikitext(arg.name)
-            name = str(arg.name).strip()
+            name = self.to_template_name(str(arg.name).strip())
             if name == '':
                 self.warn(f"Template name is blank in {arg}")
                 code.remove(arg)

@@ -56,7 +56,12 @@ re_file = re.compile(r'^[^<>]+\.(ogg|wav|mp3)$')
 
 # From http://www.internationalphoneticalphabet.org/ipa-charts/ipa-symbols-with-unicode-decimal-and-hex-codes/
 IPA_SYMBOLS = '‿⁽⁾()abcdefghijklmnopqrstuvwxyzɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞ɫ↓↑→↗↘\u0325\u030A\u0324\u032A\u032C\u0330\u033A\u033C\u033B\u031A\u0339\u0303\u031C\u031F\u0320\u0308\u0334\u033D\u031D\u0329\u031E\u032F\u0318\u0319\u0306\u030B\u0301\u0304\u0300\u030F\u035C\u0361'
-re_IPA_str = re.compile(rf'^[{IPA_SYMBOLS}]+$')
+word_types_IPA = {
+    'letters only': re.compile(rf'^[{IPA_SYMBOLS}]+$'),
+    # Add space as an allowed symbol
+    'multi-word dash-separated': re.compile(rf'^[ {IPA_SYMBOLS}]+$'),
+    'multi-word space-separated': re.compile(rf'^[ {IPA_SYMBOLS}]+$'),
+}
 
 
 # re_extra_templates = r'^([tT]emplate|[шШ]аблон):(' + '|'.join(['падежи', 'кавычки']) + ')$'
@@ -85,6 +90,7 @@ root_templates = {
     k: None if not v else {v} if isinstance(v, str) else v for k, v in {
         'abbrev': 'abbreviation',
         'прил': {'adjective', 'participle'},  # прилагательное, причастие
+        'прич ru': {'participle'},
         'наречие': 'adverb',
         'adv ru': 'adverb',  # наречие
         'conj ru': 'conjunction',  # союз
@@ -101,7 +107,6 @@ root_templates = {
         'числ ru 7-8-десят': 'number',
         'числ-5': 'number',
         'onomatop ru': 'onomatopoeia',
-        'прич.': 'participle',  # причастие
         'part ru': 'particle',  # частица
         'predic ru': 'predicate',  # сказуемое
         'prep ru': 'preposition',  # предлог
@@ -110,7 +115,6 @@ root_templates = {
         'Гл-блок': 'verb',
         'спряжения': 'verb',
         'деепр ru': 'transgressive',  # деепричастие
-        'дееприч.': 'transgressive',  # деепричастие
 
         '-ся': '', '=': '', 'alt': '', 'anim': '', 'cf': '', 'morph': '', 'phrase': '', 'transcription-ru': '',
         'transcriptions-ru': '', 'астроним': '', 'действие': '', 'илл': '', 'медиа': '', 'морфема': '', 'морфо': '',
@@ -213,7 +217,8 @@ ignore_templates = {
     'эл.-техн.', 'эл.-энерг.', 'электр.', 'энтом.', 'энтомол.', 'эррат.', 'ЭСБЕ', 'ЭСРЯ МГУ', 'ЭССЯ2', 'этимология',
     'этимология:', 'этимология:варроатоз', 'этимология:вода', 'этимология:Ярило', 'этногр.', 'этнол.', 'этнолог.',
     'ювел.', 'юр.', 'юрид.', 'ЯИ', 'ЯН', 'ЯРГ',
-    'Форма-мест', 'форма-гл', 'форма-прил', 'форма-сущ', 'Форма-числ', 'форма-прич','эзот.', 'тех.жарг.',
+    'Форма-мест', 'форма-гл', 'форма-прил', 'форма-сущ', 'Форма-числ', 'форма-прич', 'эзот.', 'тех.жарг.',
+    'дееприч.', 'прич.', 'Фам Козёл', 'Фам 0', 'Суту́гина', 'Фам рь',
 }
 
 double_title_case(ignore_templates)

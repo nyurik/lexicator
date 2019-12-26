@@ -22,7 +22,7 @@ There are several types of PageRetrievers:
 * **Downloaders** - uses MediaWiki API to download page content. Does minimal content processing.
   * `DownloaderForTemplates` - downloads Wiktionary templates.
   * `DownloaderForWords` - downloads Wiktionary word pages.
-  * `LexemDownloader` - downloads Lexemes in a given language. Uses WDQS to find relevant lexemes, so the data might be stale for ~1min.
+  * `LexemeDownloader` - downloads Lexemes in a given language. Uses WDQS to find relevant lexemes, so the data might be stale for ~1min.
 * **Resolvers** - executes Lua modules via MW API in bulk to compute their results. Only works with the Lua modules that use a regular wiki template to render the results.
  For example, [Template:transcription-ru](https://ru.wiktionary.org/wiki/Шаблон:transcription-ru) converts a Russian word into an IPA transcription.
  The module takes some parameters, generates IPA string, and uses [Template:transcription](https://ru.wiktionary.org/wiki/Шаблон:transcription) to draw it on the page.

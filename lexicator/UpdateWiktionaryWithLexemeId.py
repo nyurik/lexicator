@@ -1,17 +1,22 @@
 from mwparserfromhell import parse as mw_parse
 from mwparserfromhell.nodes import Template, Text, Tag, Wikilink, Heading, HTMLEntity, Comment, ExternalLink
 
+from lexicator import list_to_dict_of_lists, ContentStore, to_json
+
 IGNORE_TYPES = {Text, Tag, Wikilink, Comment, ExternalLink, HTMLEntity}
 LEX_TEMPLATE = 'Лексема в Викиданных'
 
 ignore_words = {
-    'антилидер',
 }
+
+
+def format_lex_ref(lexeme_id):
+    return f'{{{{{LEX_TEMPLATE}|{lexeme_id}}}}}'
 
 
 class UpdateWiktionaryWithLexemeId:
 
-    def __init__(self, wiki_words, existing_lexemes, config) -> None:
+    def __init__(self, wiki_words, existing_lexemes: ContentStore, config) -> None:
         self.wiki_words = wiki_words
         self.existing_lexemes = existing_lexemes
         self.site = config.wiktionary
@@ -20,26 +25,43 @@ class UpdateWiktionaryWithLexemeId:
     def run(self):
         self.wiki_words.refresh()
         self.existing_lexemes.refresh()
-        for lex in self.existing_lexemes.get_all():
-            word = lex.data
-            if word in ignore_words:
-                continue
-            lexeme_id = lex.title[len('Lexeme:'):]
+        for word, lexemes in list_to_dict_of_lists(self.existing_lexemes.get_all(), lambda l: l.data).items():
+            self.run_one_word(word, lexemes)
+
+    def run_one_word(self, word, lexemes=None):
+        if word in ignore_words:
+            return
+        if lexemes is None:
+            lexemes = self.existing_lexemes.get_all(
+                filters=self.existing_lexemes.PageContentDb.data == to_json(word),
+            )
+        lex_ids = [lex.title[len('Lexeme:'):] for lex in lexemes]
+        try:
+            page = self.wiki_words.get(word)
+        except KeyError:
+            print(f"Word {word} does not exist in Wiktionary, orphaned lexemes: {lex_ids}")
+            return
+        if all((format_lex_ref(v) in page.content for v in lex_ids)):
+            return
+        print(f"Updating {word} with {lex_ids}")
+        for idx, lexeme_id in enumerate(lex_ids):
             try:
-                self.add_or_update_lexeme(word, lexeme_id)
+                self.add_or_update_lexeme(word, idx, lexeme_id)
             except ValueError as err:
                 print(f'{word}: {err}')
-            except Exception:
-                print(f'{word} failed')
-                raise
+            except Exception as err:
+                print(f'{word} failed with {err}')
+                # raise
 
     def add_or_update_lexeme(self, word: str, lexeme_idx: int, lexeme_id: str):
         page = self.wiki_words.get(word, 'all' if lexeme_idx > 0 else False)
         if not page:
             raise ValueError(f'Page {word} does not exist')
-        lex_link = f'{{{{{LEX_TEMPLATE}|{lexeme_id}}}}}'
+        if page.title != word:
+            raise ValueError(f'Page {word} redirects to {page.title}, orphaned lexeme {lexeme_id}')
+        lex_link = format_lex_ref(lexeme_id)
         content = page.content
-        # content = re.sub(re.escape(lex_link) + r'\n+', '', content).lstrip()
+
         code = mw_parse(content)
         placeholder = None
         inside_ru_section = None
@@ -52,7 +74,7 @@ class UpdateWiktionaryWithLexemeId:
                 name = str(arg.name).strip()
                 if name.startswith('Шаблон:') or name.startswith('шаблон:'):
                     name = name[len('шаблон:'):]
-                if name == LEX_TEMPLATE and placeholder:
+                if name == LEX_TEMPLATE and (inside_meaning or 0) == lexeme_idx:
                     page_lex_id = str(arg.get(1)).strip()
                     if page_lex_id == lexeme_id:
                         if self.verbose:
@@ -85,7 +107,7 @@ class UpdateWiktionaryWithLexemeId:
                 print(f'Unexpected element in the header - {typ} -- {arg}')
 
         if not placeholder:
-            raise ValueError(f'Unable to find where to insert the header for {word}')
+            raise ValueError(f'unable to find where to insert {lexeme_id} (#{lexeme_idx + 1})')
 
         code.insert_after(placeholder, '\n' + lex_link)
         desired_content = str(code)

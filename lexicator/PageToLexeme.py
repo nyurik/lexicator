@@ -1,3 +1,5 @@
+from typing import List
+
 from .Properties import *
 from .ResolverViaMwParse import json_key
 from .TemplateProcessor import TemplateProcessorBase
@@ -6,7 +8,7 @@ from .TemplateProcessorCommon import TranscriptionRu, TranscriptionsRu, PreRefor
     Hyphenation
 from .TemplateProcessorNouns import Noun, UnknownNoun
 from .TemplateUtils import test_str
-from .consts import root_templates, word_types, template_to_type, re_file, re_IPA_str
+from .consts import root_templates, word_types, template_to_type, re_file, word_types_IPA
 from .utils import remove_stress
 
 
@@ -38,8 +40,8 @@ class PageToLexeme:
                 return word_type
         raise ValueError('Unrecognized word type')
 
-    def validate_str(self, val):
-        if not word_types[self.word_type].match(test_str(val)):
+    def validate_str(self, val, param):
+        if not word_types[self.word_type].match(test_str(val, param)):
             raise ValueError(f'word {val} does not match the expected word type "{self.word_type}"')
         return val
 
@@ -101,15 +103,23 @@ class LexemeParserState:
         self.__primary_form = primary_form
 
     def create_lexeme(self):
+        try:
+            lex_category = Q_PART_OF_SPEECH[self.grammar_type]
+        except KeyError:
+            raise ValueError(f"Unhandled lexical category '{self.grammar_type}'")
+
         self.result = dict(
             lemmas=dict(ru=dict(language='ru', value=self.title)),
-            lexicalCategory=Q_PART_OF_SPEECH[self.grammar_type],
+            lexicalCategory=lex_category,
             language=Q_RUSSIAN_LANG,
         )
 
-        self.data_section = sorted(
-            [(known_headers[tuple(h[1:])], t, p) for h, t, p in self.data_section],
-            key=data_section_sorter)
+        try:
+            self.data_section = sorted(
+                [(known_headers[tuple(h[1:])], t, p) for h, t, p in self.data_section],
+                key=data_section_sorter)
+        except KeyError as err:
+            raise ValueError(f"unknown section header {err} found")
 
         for header, template, params in self.data_section:
             if template not in templates or not templates[template].autorun:
@@ -144,7 +154,7 @@ class LexemeParserState:
                     if rx.match(template):
                         add_types(typ)
         if not grammar_type:
-            raise ValueError(f"Unknown type {self.title}:\n{self.data_section}")
+            raise ValueError(f"Unknown grammar type:\n{self.data_section}")
         if len(grammar_type) > 1:
             if grammar_type == root_templates['прил']:
                 return 'adjective'
@@ -152,8 +162,8 @@ class LexemeParserState:
                 f"Multiple types found in {self.title} - {', '.join(grammar_type)}:\n{self.data_section}")
         return grammar_type.pop()
 
-    def validate_str(self, val):
-        return self.parent.validate_str(val)
+    def validate_str(self, val, param):
+        return self.parent.validate_str(val, param)
 
     @staticmethod
     def validate_file(val):
@@ -161,10 +171,9 @@ class LexemeParserState:
             raise ValueError(f'File {val} does not appear to be correct')
         return val
 
-    @staticmethod
-    def validate_ipa(val):
-        if not re_IPA_str.match(val):
-            raise ValueError(f'IPA {val} does not appear to be correct')
+    def validate_ipa(self, val):
+        if not word_types_IPA[self.parent.word_type].match(val):
+            raise ValueError(f'IPA {val} for {self.parent.word_type} does not appear to be correct')
         return val
 
     def get_extra_state(self, template):
@@ -182,7 +191,11 @@ class LexemeParserState:
     def set_pronunciation_reference(self, index, form_id, param_value):
         if param_value:
             pron = self.get_pronunciation(form_id, index)
-            set_refernces_on_new(pron, {P_DESCRIBED_BY: Q_SOURCES[param_value]})
+            try:
+                refs = {P_DESCRIBED_BY: Q_SOURCES[param_value]}
+            except KeyError:
+                raise ValueError(f"unable to set pronunciation reference: {param_value} not found in Q_SOURCES")
+            set_refernces_on_new(pron, refs)
 
     def get_pronunciation(self, form_id, index):
         if form_id not in self.form_by_param:
@@ -203,12 +216,12 @@ class LexemeParserState:
             self.add_pronunciation(form, word)
         return pronunciations[index]
 
-    def set_val(self, param_value, prop, form):
+    def set_val(self, param_value, prop: Property, form):
         if param_value:
             if form not in self.form_by_param:
                 raise ValueError(f"form {form} does not exist, trying to set {prop}={param_value}")
             if isinstance(param_value, str):
-                param_value = ClaimValue(test_str(param_value))
+                param_value = ClaimValue(test_str(param_value, prop.name))
             prop.set_claim_on_new(self.form_by_param[form], param_value)
 
     def create_form(self, form_name, word, features: List[str]):
@@ -218,7 +231,7 @@ class LexemeParserState:
         form = dict(
             add='',  # without this forms are not added
             representations=dict(
-                ru=dict(language='ru', value=self.validate_str(stressless_word))
+                ru=dict(language='ru', value=self.validate_str(stressless_word, 'form_representation'))
             ),
             grammaticalFeatures=[Q_FEATURES[v] for v in features],
         )
@@ -228,7 +241,8 @@ class LexemeParserState:
         self.form_by_param[form_name] = form
 
     def add_pronunciation(self, form, word):
-        P_PRONUNCIATION.set_claim_on_new(form, ClaimValue(mono_value('ru', self.validate_str(word))))
+        P_PRONUNCIATION.set_claim_on_new(form, ClaimValue(
+            mono_value('ru', self.validate_str(word, P_PRONUNCIATION.name))))
 
     def resolve_lua(self, template, params):
         if template in self.parent.resolvers:
@@ -249,7 +263,8 @@ class LexemeParserState:
     def add_stem(self):
         if 'основа' in self.unhandled_params:
             P_WORD_STEM.set_claim_on_new(self.result, ClaimValue(
-                mono_value('ru', self.validate_str(remove_stress(self.unhandled_params['основа'])))))
+                mono_value('ru', self.validate_str(remove_stress(self.unhandled_params['основа']), 'основа'))))
+
 
 templates: Dict[str, TemplateProcessorBase] = {k: v(k) for k, v in {
     'transcription-ru': TranscriptionRu,

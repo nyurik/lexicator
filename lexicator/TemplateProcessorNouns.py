@@ -1,8 +1,9 @@
-from lexicator.utils import remove_stress
-from .TemplateUtils import validate_zaliznyak1, validate_asterisk, plurale_tantum, singularia_tantum, get_bool_param
+from .Properties import *
+from .TemplateUtils import validate_zaliznyak1, validate_asterisk, plurale_tantum, singularia_tantum, get_bool_param, \
+    normalize_zal
 from .TemplateProcessor import TemplateProcessor
-from .Properties import P_GRAMMATICAL_GENDER, P_INFLECTION_CLASS, Q_ZAL_NOUN_CLASSES, \
-    ZAL_NOUN_NORMALIZATION, P_HAS_QUALITY, Q_FEATURES, P_WORD_STEM, ClaimValue, mono_value
+from .TemplateUtils import validate_zaliznyak1, validate_asterisk, plurale_tantum, singularia_tantum, get_bool_param, \
+    normalize_zal
 
 
 class Noun(TemplateProcessor):
@@ -43,6 +44,10 @@ class Noun(TemplateProcessor):
             ср='neuter',
             о='common',
             общ='common',
+            жс=['feminine', 'common'],
+            мс=['masculine', 'common'],
+            см=['common', 'masculine'],
+            мж=['masculine', 'feminine'],
         )),
         'скл': (P_INFLECTION_CLASS, Q_FEATURES, {
             '1': 'declension-1',
@@ -52,12 +57,14 @@ class Noun(TemplateProcessor):
             'а': 'adjectival',
             'мс': 'pronoun'
         }),
-        'зализняк': (P_INFLECTION_CLASS, Q_ZAL_NOUN_CLASSES, ZAL_NOUN_NORMALIZATION),
+        'зализняк': (P_INFLECTION_CLASS, Q_ZAL_NOUN_CLASSES, normalize_zal),
         'зализняк1': validate_zaliznyak1,
-        'кат': (P_HAS_QUALITY, Q_FEATURES, dict(
-            одуш='animate',
-            неодуш='inanimate',
-        )),
+        'кат': (P_HAS_QUALITY, Q_FEATURES, {
+            'одуш': 'animate',
+            'неодуш': 'inanimate',
+            'неодуш-одуш': [ClaimValue('inanimate', rank='preferred'), 'animate'],
+            'одуш-неодуш': [ClaimValue('animate', rank='preferred'), 'inanimate'],
+        }),
         # Corresponds to a "*" in 'зализняк', just validate
         'чередование': validate_asterisk,
 
@@ -130,7 +137,7 @@ class Noun(TemplateProcessor):
             if 'hard' in extras:
                 features = [*features, 'rare-form']
             else:
-                return # Skip this form
+                return  # Skip this form
         super().param_to_form(parser, param, param_getter, features)
 
         second_form_key = param + '2'

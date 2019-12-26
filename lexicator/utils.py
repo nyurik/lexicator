@@ -87,9 +87,12 @@ class PageContent:
         obj = clean_empty_vals(dataclasses.asdict(self))
         return obj
 
-    @staticmethod
-    def from_dict(obj):
-        return PageContent(**obj)
+    # @staticmethod
+    # def from_dict(obj):
+    #     return PageContent(**obj)
+
+    def is_deleted(self):
+        return self.content is None and self.data is None and self.timestamp is None and self.redirect is None
 
 
 def params_to_wikitext(template):

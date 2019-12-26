@@ -69,8 +69,7 @@ class Hyphenation(TemplateProcessorBase):
                     print(f'{parser.title}: unexpected non-breaking syllable position {idx} in {parts}')
                 merge_next = True
             else:
-                if not re_russian_word.match(part):
-                    raise ValueError(f'syllable "{part}" does not seem to be a russian word')
+                part = parser.validate_str(part, 'hypenation')
                 if merge_next:
                     new_parts[-1] += part
                     merge_next = False
@@ -78,9 +77,12 @@ class Hyphenation(TemplateProcessorBase):
                     new_parts.append(part)
 
         new_value = remove_stress('‧'.join(new_parts))
-        P_HYPHENATION.set_claim_on_new(
-            parser.form_by_param[parser.primary_form],
-            ClaimValue(new_value))
+        try:
+            form_obj = parser.form_by_param[parser.primary_form]
+        except KeyError:
+            raise ValueError(f"primary form '{parser.primary_form}' has not yet been created. "
+                             f"Existing forms: [{', '.join(parser.form_by_param.keys())}]")
+        P_HYPHENATION.set_claim_on_new(form_obj, ClaimValue(new_value))
 
 
 class PreReformSpelling(TemplateProcessorBase):
@@ -92,5 +94,5 @@ class PreReformSpelling(TemplateProcessorBase):
                 f"Old={form['representations'][RUSSIAN_PRE_REFORM_ID]['value']}, new={params}")
         form['representations'][RUSSIAN_PRE_REFORM_ID] = {
             'language': RUSSIAN_PRE_REFORM_ID,
-            'value': test_str(params)
+            'value': test_str(params, RUSSIAN_PRE_REFORM_ID)
         }

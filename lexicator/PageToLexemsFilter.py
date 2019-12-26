@@ -37,13 +37,22 @@ class PageToLexemsFilter(PageFilter):
         sections.append(data_section)
 
         results = []
+        errors = []
         for section in sections:
             parser = PageToLexeme(page.title, section, self.resolvers)
             try:
                 results.append(parser.run())
             except ValueError as err:
-                if parser.grammar_types.intersection(self.handled_types):
-                    raise
+                errors.append(str(err))
 
-        if results:
-            return dataclasses.replace(page, data=results, content=None)
+        if not results:
+            results = None
+
+        if errors:
+            errors = '\n\n**************************************\n'.join(errors)
+        elif not results:
+            errors = 'Nothing was found to process'
+        else:
+            errors = None
+
+        return dataclasses.replace(page, data=results, content=errors)

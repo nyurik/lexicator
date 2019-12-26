@@ -29,7 +29,7 @@ class PageFilter(PageRetriever):
                        filters=None,
                        force: Union[bool, str] = None) -> Iterable[PageContent]:
         yield from self._iterate((
-            page for page in self.source.get_all(filters)
+            page for page in self.source.get_all(filters=filters)
             if not exclude or page.title not in exclude or exclude[page.title] < page.timestamp
         ), force, progress_reporter)
 

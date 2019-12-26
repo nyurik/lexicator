@@ -108,8 +108,8 @@ class ResolverViaMwParse(PageRetriever):
     def can_refresh(self) -> bool:
         return False
 
-    def custom_refresh(self, *filters) -> Iterable[str]:
-        for page in self.template_source.get_all(filters):
+    def custom_refresh(self, filters=None) -> Iterable[str]:
+        for page in self.template_source.get_all(filters=filters):
             if page.data:
                 for dat in page.data:
                     if dat[1] == self.template_name:

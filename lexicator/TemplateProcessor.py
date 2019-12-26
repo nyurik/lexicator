@@ -1,7 +1,10 @@
+import dataclasses
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import List, Callable, Union
 
 from lexicator.Properties import Property, ClaimValue, Q_FEATURES
+from lexicator.TemplateUtils import normalize
 from lexicator.consts import root_templates
 
 
@@ -84,11 +87,25 @@ class TemplateProcessor(TemplateProcessorBase, ABC):
 
     @staticmethod
     def create_claim(parser, param, param_value, prop, q_map, param_map):
-        val = param_map[param_value] if param_map and param_value in param_map else param_value
-        if val not in q_map:
-            raise ValueError(f"Unknown parameter value {param}={val}"
-                             f"{f' (mapped from {param_value})' if param_value != val else ''}")
-        prop.set_claim_on_new(parser.result, ClaimValue(q_map[val]))
+        value = normalize(param_value, param_map)
+        if value is None:
+            return
+        if not isinstance(value, list):
+            value = [value]
+        for val1 in value:
+            is_claim = isinstance(val1, ClaimValue)
+            val = val1.value if is_claim else val1
+            if val not in q_map:
+                raise ValueError(f"Unknown parameter value {param}={val}"
+                                 f"{f' (mapped from {param_value})' if param_value != val else ''}")
+            val = q_map[val]
+            if val is None:
+                return
+            if is_claim:
+                claim_val = dataclasses.replace(val1, value=val)
+            else:
+                claim_val = ClaimValue(val)
+            prop.set_claim_on_new(parser.result, claim_val)
 
     def param_to_form(self, parser, param, param_getter, features) -> None:
         parser.create_form(param, param_getter(param), features)
