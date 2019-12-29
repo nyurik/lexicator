@@ -9,12 +9,11 @@ from mwparserfromhell import parse as mw_parse
 from mwparserfromhell.nodes import Argument, Template, Text, Tag, Wikilink, Heading, HTMLEntity, Comment, ExternalLink
 from mwparserfromhell.nodes.extras import Parameter
 
-from lexicator.consts import root_header_templates, ignore_templates, re_ignore_template_prefixes
-from .ContentStore import ContentStore
-from .PageFilter import PageFilter
-from .consts import root_templates, NS_TEMPLATE, re_template_names, \
-    re_known_headers, re_root_templates, re_root_templates_full_str
-from .utils import PageContent, Config
+from lexicator.ContentStore import ContentStore
+from lexicator.PageFilter import PageFilter
+from lexicator.consts import root_header_templates, ignore_templates, re_ignore_template_prefixes, root_templates, \
+    NS_TEMPLATE, re_template_names, re_known_headers, re_root_templates, re_root_templates_full_str
+from lexicator.utils import PageContent, Config
 
 ignore_types = {Text, Tag, Wikilink, Comment, ExternalLink, HTMLEntity}
 

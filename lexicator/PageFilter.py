@@ -3,8 +3,8 @@ from abc import abstractmethod
 from datetime import datetime
 from typing import Iterable, Callable, Dict, Tuple, Union
 
-from .PageRetriever import PageRetriever
-from .utils import PageContent
+from lexicator.PageRetriever import PageRetriever
+from lexicator.utils import PageContent
 
 
 def update_content(page, data, content=None):

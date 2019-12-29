@@ -1,10 +1,9 @@
 from typing import Callable
 
+from lexicator.Properties import *
+from lexicator.TemplateProcessor import TemplateProcessor, TemplateProcessorBase
 from lexicator.TemplateUtils import test_str
-from lexicator.consts import re_russian_word
 from lexicator.utils import remove_stress
-from .TemplateProcessor import TemplateProcessor, TemplateProcessorBase
-from .Properties import *
 
 
 def assert_lang(param_getter):

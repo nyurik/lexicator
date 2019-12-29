@@ -1,15 +1,14 @@
 from typing import List
 
-from .Properties import *
-from .ResolverViaMwParse import json_key
-from .TemplateProcessor import TemplateProcessorBase
-from .TemplateProcessorAdjective import Adjective, Participle
-from .TemplateProcessorCommon import TranscriptionRu, TranscriptionsRu, PreReformSpelling, \
-    Hyphenation
-from .TemplateProcessorNouns import Noun, UnknownNoun
-from .TemplateUtils import test_str
-from .consts import root_templates, word_types, template_to_type, re_file, word_types_IPA
-from .utils import remove_stress
+from lexicator.Properties import *
+from lexicator.ResolverViaMwParse import json_key
+from lexicator.TemplateProcessor import TemplateProcessorBase
+from lexicator.TemplateProcessorAdjective import Adjective, Participle
+from lexicator.TemplateProcessorCommon import TranscriptionRu, TranscriptionsRu, PreReformSpelling, Hyphenation
+from lexicator.TemplateProcessorNouns import Noun, UnknownNoun
+from lexicator.TemplateUtils import test_str
+from lexicator.consts import root_templates, word_types, template_to_type, re_file, word_types_IPA
+from lexicator.utils import remove_stress
 
 
 class PageToLexeme:

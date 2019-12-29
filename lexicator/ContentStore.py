@@ -8,8 +8,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from .PageRetriever import PageRetriever
-from .utils import PageContent, batches, trim_timedelta, T
+from lexicator.PageRetriever import PageRetriever
+from lexicator.utils import PageContent, batches, trim_timedelta, T
 
 
 def to_compact_json(data):

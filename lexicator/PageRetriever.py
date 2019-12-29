@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Iterable, Callable, Dict, Tuple, Any, Union
+from typing import Iterable, Callable, Dict, Tuple, Union
 
-from .utils import PageContent, Config
+from lexicator.utils import PageContent, Config
 
 
 class PageRetriever(ABC):

@@ -1,5 +1,5 @@
-from typing import Dict, Set, Union, Any
 from dataclasses import dataclass, field
+from typing import Dict, Set, Union, Any
 
 
 def mono_value(lang, text):

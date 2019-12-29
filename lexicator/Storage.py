@@ -1,13 +1,13 @@
 import os
 
+from lexicator.ContentStore import ContentStore
+from lexicator.PageDownloader import DownloaderForWords, DownloaderForTemplates, LexemeDownloader
+from lexicator.PageParser import PageParser
+from lexicator.PageToLexemsFilter import PageToLexemsFilter
+from lexicator.ResolverViaMwParse import ResolveNounRu, ResolveTranscriptionsRu, ResolveTranscriptionRu
 from lexicator.UpdateWiktionaryWithLexemeId import UpdateWiktionaryWithLexemeId
 from lexicator.WikidataUploader import WikidataUploader
-from .utils import Config
-from .ResolverViaMwParse import ResolveNounRu, ResolveTranscriptionsRu, ResolveTranscriptionRu
-from .PageToLexemsFilter import PageToLexemsFilter
-from .PageDownloader import DownloaderForWords, DownloaderForTemplates, LexemeDownloader
-from .ContentStore import ContentStore
-from .PageParser import PageParser
+from lexicator.utils import Config
 
 
 class Storage:

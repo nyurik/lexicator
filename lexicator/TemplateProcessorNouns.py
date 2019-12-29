@@ -1,9 +1,7 @@
-from .Properties import *
-from .TemplateUtils import validate_zaliznyak1, validate_asterisk, plurale_tantum, singularia_tantum, get_bool_param, \
-    normalize_zal
-from .TemplateProcessor import TemplateProcessor
-from .TemplateUtils import validate_zaliznyak1, validate_asterisk, plurale_tantum, singularia_tantum, get_bool_param, \
-    normalize_zal
+from lexicator.Properties import *
+from lexicator.TemplateProcessor import TemplateProcessor
+from lexicator.TemplateUtils import validate_zaliznyak1, validate_asterisk, plurale_tantum, singularia_tantum, \
+    get_bool_param, normalize_zal
 
 
 class Noun(TemplateProcessor):

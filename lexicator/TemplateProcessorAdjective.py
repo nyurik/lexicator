@@ -1,8 +1,8 @@
 import re
 
 from lexicator.Properties import Q_FEATURES, P_INFLECTION_CLASS, Q_ZAL_ADJ_CLASSES, P_HAS_QUALITY
+from lexicator.TemplateProcessor import TemplateProcessor
 from lexicator.TemplateUtils import normalize_zal
-from .TemplateProcessor import TemplateProcessor
 
 
 def validate_flag(params_to_check, enable=False):

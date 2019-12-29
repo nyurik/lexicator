@@ -1,9 +1,8 @@
 import dataclasses
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import List, Callable, Union
 
-from lexicator.Properties import Property, ClaimValue, Q_FEATURES
+from lexicator.Properties import Property, ClaimValue
 from lexicator.TemplateUtils import normalize
 from lexicator.consts import root_templates
 

@@ -1,12 +1,12 @@
 import dataclasses
+from typing import Dict, Union
 
 from pywikiapi import Site
-from typing import Dict, Union, Iterable
 
-from .PageToLexeme import PageToLexeme
-from .utils import PageContent, Config
-from .PageFilter import PageFilter
-from .ContentStore import ContentStore
+from lexicator.ContentStore import ContentStore
+from lexicator.PageFilter import PageFilter
+from lexicator.PageToLexeme import PageToLexeme
+from lexicator.utils import PageContent, Config
 
 
 class PageToLexemsFilter(PageFilter):

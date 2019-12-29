@@ -1,5 +1,4 @@
 import re
-
 from typing import Callable, Union
 
 from lexicator.Properties import mono_value, P_HAS_QUALITY, ClaimValue

@@ -9,11 +9,11 @@ from pywikiapi import Site
 from pywikiapi import to_timestamp
 from pywikiapi.utils import to_datetime
 
-from .PageRetriever import PageRetriever
-from .Properties import Q_RUSSIAN_LANG
-from .WikidataQueryService import entity_id
-from .consts import NS_MAIN, NS_TEMPLATE, re_template_names, NS_LEXEME
-from .utils import PageContent, to_json, batches, Config, trim_timedelta
+from lexicator.PageRetriever import PageRetriever
+from lexicator.Properties import Q_RUSSIAN_LANG
+from lexicator.WikidataQueryService import entity_id
+from lexicator.consts import NS_MAIN, NS_TEMPLATE, re_template_names, NS_LEXEME
+from lexicator.utils import PageContent, to_json, batches, Config, trim_timedelta
 
 
 class WikipageDownloader(PageRetriever):

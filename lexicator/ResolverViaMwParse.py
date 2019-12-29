@@ -1,13 +1,12 @@
 import json
-import json
 import re
 from datetime import datetime
 from typing import Iterable, Callable, Dict, Tuple, List, Union
 
 from pywikiapi import Site
 
-from .PageRetriever import PageRetriever
-from .utils import PageContent, batches, params_to_wikitext, Config
+from lexicator.PageRetriever import PageRetriever
+from lexicator.utils import PageContent, batches, params_to_wikitext, Config
 
 
 def json_key(template, params):

@@ -1,9 +1,7 @@
 import re
-import unicodedata
-from dataclasses import dataclass
-from typing import Callable, Union
+from typing import Union
 
-from mwparserfromhell.wikicode import Wikicode
+import unicodedata
 
 NS_MAIN = 0
 NS_USER = 2

@@ -1,12 +1,13 @@
-from time import sleep
 import json
+import traceback
 from typing import Set
 
-from .UpdateWiktionaryWithLexemeId import UpdateWiktionaryWithLexemeId
-from .Properties import Q_PART_OF_SPEECH
-from .ContentStore import ContentStore
-from .utils import to_json, PageContent
-import traceback
+from time import sleep
+
+from lexicator.ContentStore import ContentStore
+from lexicator.Properties import Q_PART_OF_SPEECH
+from lexicator.UpdateWiktionaryWithLexemeId import UpdateWiktionaryWithLexemeId
+from lexicator.utils import to_json
 
 presets = {
 }

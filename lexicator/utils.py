@@ -1,12 +1,12 @@
 import dataclasses
 import json
-import unicodedata
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Iterable, NewType, Tuple, Union, Dict, Any, TypeVar, List
 
 import requests
+import unicodedata
 from mwparserfromhell.nodes import Template
 from mwparserfromhell.nodes.extras import Parameter
 from pywikiapi import Site, AttrDict
