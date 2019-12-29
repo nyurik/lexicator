@@ -1,9 +1,8 @@
 import dataclasses
 from typing import Dict, Union
 
-from pywikiapi import Site
-
 from lexicator.PageToLexeme import PageToLexeme
+from lexicator.consts import MEANING_HEADERS
 from lexicator.wikicache.ContentStore import ContentStore
 from lexicator.wikicache.PageContent import PageContent
 from lexicator.wikicache.PageFilter import PageFilter
@@ -11,13 +10,14 @@ from lexicator.wikicache.utils import LogConfig
 
 
 class PageToLexemsFilter(PageFilter):
-    def __init__(self, log_config: LogConfig, source: ContentStore, wikidata: Site,
+    def __init__(self, log_config: LogConfig, lang_code: str, source: ContentStore,
                  resolvers: Dict[str, ContentStore]) -> None:
         super().__init__(log_config, source)
+        self.lang_code = lang_code
         self.source = source
-        self.wikidata = wikidata
         self.resolvers = resolvers
         self.handled_types = {'noun', 'adjective', 'participle'}
+        self.meanings_headers = set(MEANING_HEADERS[lang_code])
 
     def process_page(self, page: PageContent, force: Union[bool, str]) -> Union[PageContent, None]:
         if not page.data:
@@ -27,7 +27,7 @@ class PageToLexemsFilter(PageFilter):
         data_section = []
         has_first_section = False
         for row in page.data:
-            if row[1] == '_заголовок' or row[1] == '_з':
+            if row[1] in self.meanings_headers:
                 if not has_first_section:
                     has_first_section = True
                 else:
@@ -39,7 +39,7 @@ class PageToLexemsFilter(PageFilter):
         results = []
         errors = []
         for section in sections:
-            parser = PageToLexeme(page.title, section, self.resolvers)
+            parser = PageToLexeme(self.lang_code, page.title, section, self.resolvers)
             try:
                 results.append(parser.run())
             except ValueError as err:

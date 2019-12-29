@@ -6,10 +6,11 @@ from lexicator.Properties import *
 from lexicator.wikicache.utils import json_key
 from lexicator.TemplateProcessor import TemplateProcessorBase
 from lexicator.TemplateProcessorAdjective import Adjective, Participle
-from lexicator.TemplateProcessorCommon import TranscriptionRu, TranscriptionsRu, PreReformSpelling, Hyphenation
+from lexicator.TemplateProcessorCommon import RuTranscription, RuTranscriptions, RuPreReformSpelling, RuHyphenation
 from lexicator.TemplateProcessorNouns import Noun, UnknownNoun
 from lexicator.TemplateUtils import test_str
-from lexicator.consts import root_templates, word_types, template_to_type, re_file, word_types_IPA
+from lexicator.consts import root_templates, word_types, template_to_type, re_file, word_types_IPA, Q_LANGUAGE_CODES, \
+    Q_LANGUAGE_WIKTIONARIES, Q_SOURCES
 from lexicator.utils import remove_stress
 
 if TYPE_CHECKING:
@@ -17,7 +18,8 @@ if TYPE_CHECKING:
 
 
 class PageToLexeme:
-    def __init__(self, title, data_section, resolvers: Dict[str, ContentStore]) -> None:
+    def __init__(self, lang_code, title, data_section, resolvers: Dict[str, ContentStore]) -> None:
+        self.lang_code = lang_code
         self.title = title
         self.data_section = data_section
         self.resolvers = resolvers
@@ -72,13 +74,6 @@ def data_section_sorter(values):
     return 0 if template not in templates else 1 if templates[template].is_primary else 2
 
 
-def set_imported_from_wkt(data):
-    if 'claims' in data:
-        for props in data['claims'].values():
-            for claim in props:
-                set_references_on_new(claim, {P_IMPORTED_FROM_WM: Q_RU_WIKTIONARY})
-
-
 class LexemeParserState:
     def __init__(self, parent: PageToLexeme, data_section):
         self.parent = parent
@@ -111,9 +106,9 @@ class LexemeParserState:
             raise ValueError(f"Unhandled lexical category '{self.grammar_type}'")
 
         self.result = dict(
-            lemmas=dict(ru=dict(language='ru', value=self.title)),
+            lemmas={self.parent.lang_code: dict(language=self.parent.lang_code, value=self.title)},
             lexicalCategory=lex_category,
-            language=Q_RUSSIAN_LANG,
+            language=Q_LANGUAGE_CODES[self.parent.lang_code],
         )
 
         try:
@@ -129,13 +124,19 @@ class LexemeParserState:
             else:
                 self.run_template(template, params)
 
-        set_imported_from_wkt(self.result)
+        self.set_imported_from_wkt(self.result)
         for typ in ['senses', 'forms']:
             if typ in self.result:
                 for val in self.result[typ]:
-                    set_imported_from_wkt(val)
+                    self.set_imported_from_wkt(val)
 
         return self.result
+
+    def set_imported_from_wkt(self, data):
+        if 'claims' in data:
+            for props in data['claims'].values():
+                for claim in props:
+                    set_references_on_new(claim, {P_IMPORTED_FROM_WM: Q_LANGUAGE_WIKTIONARIES[self.parent.lang_code]})
 
     def get_grammar_type(self):
         grammar_type: Set = None
@@ -193,10 +194,12 @@ class LexemeParserState:
     def set_pronunciation_reference(self, index, form_id, param_value):
         if param_value:
             pron = self.get_pronunciation(form_id, index)
+            q_sources = Q_SOURCES[self.parent.lang_code]
             try:
-                refs = {P_DESCRIBED_BY: Q_SOURCES[param_value]}
+                refs = {P_DESCRIBED_BY: q_sources[param_value]}
             except KeyError:
-                raise ValueError(f"unable to set pronunciation reference: {param_value} not found in Q_SOURCES")
+                raise ValueError(f"unable to set pronunciation reference: {param_value} not found"
+                                 f" in Q_SOURCES['{self.parent.lang_code}']")
             set_references_on_new(pron, refs)
 
     def get_pronunciation(self, form_id, index):
@@ -232,9 +235,12 @@ class LexemeParserState:
         stressless_word = remove_stress(word)
         form = dict(
             add='',  # without this forms are not added
-            representations=dict(
-                ru=dict(language='ru', value=self.validate_str(stressless_word, 'form_representation'))
-            ),
+            representations={
+                self.parent.lang_code: dict(
+                    language=self.parent.lang_code,
+                    value=self.validate_str(stressless_word, 'form_representation'),
+                )
+            },
             grammaticalFeatures=[Q_FEATURES[v] for v in features],
         )
         if stressless_word != word:
@@ -269,13 +275,13 @@ class LexemeParserState:
 
 
 templates: Dict[str, TemplateProcessorBase] = {k: v(k) for k, v in {
-    'transcription-ru': TranscriptionRu,
-    'transcriptions-ru': TranscriptionsRu,
+    'transcription-ru': RuTranscription,
+    'transcriptions-ru': RuTranscriptions,
     'inflection сущ ru': Noun,
     'сущ-ru': Noun,
     'сущ ru': UnknownNoun,
     'прил': Adjective,
-    'по-слогам': Hyphenation,
-    '_дореф': PreReformSpelling,
+    'по-слогам': RuHyphenation,
+    '_дореф': RuPreReformSpelling,
     '_прич ru': Participle,
 }.items()}

@@ -3,7 +3,6 @@ from pathlib import Path
 from lexicator.PageDownloader import TemplateDownloaderRu
 from lexicator.PageParser import PageParser
 from lexicator.PageToLexemsFilter import PageToLexemsFilter
-from lexicator.Properties import Q_RUSSIAN_LANG
 from lexicator.ResolverViaMwParse import ResolveNounRu, ResolveTranscriptionsRu, ResolveTranscriptionRu
 from lexicator.UpdateWiktionaryWithLexemeId import UpdateWiktionaryWithLexemeId
 from lexicator.WikidataUploader import WikidataUploader
@@ -15,7 +14,7 @@ from lexicator.wikicache.WiktionaryWordDownloader import WiktionaryWordDownloade
 
 class Storage:
     def __init__(self, config: Config):
-        path = Path("_cache", config.lang)
+        path = Path("_cache", config.lang_code)
         path.mkdir(exist_ok=True, parents=True)
 
         log_config = config
@@ -27,7 +26,7 @@ class Storage:
             WiktionaryWordDownloader(config.wiktionary, log_config))
         self.existing_lexemes = ContentStore(
             path / 'wikidata-raw-lexemes.db',
-            LexemeDownloader(config.wikidata, config.wdqs, Q_RUSSIAN_LANG, log_config))
+            LexemeDownloader(config.wikidata, config.wdqs, config.lang_code, log_config))
 
         self.parsed_wiki_words = ContentStore(
             path / 'parsed.wiktionary.db',
@@ -48,7 +47,7 @@ class Storage:
         self.desired_lexemes = ContentStore(
             path / 'expected_lexemes.db',
             PageToLexemsFilter(
-                log_config, self.parsed_wiki_words, config.wikidata,
+                log_config, config.lang_code, self.parsed_wiki_words,
                 {v.retriever.template_name: v for v in (
                     self.resolve_noun_ru,
                     self.resolve_transcription_ru,

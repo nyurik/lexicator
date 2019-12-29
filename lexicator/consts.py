@@ -5,6 +5,26 @@ import unicodedata
 
 HTML_BR_TAGS = {'<br>', '<br >', '<br/>', '<br />'}
 
+# Templates used to indicate the meaning of the word, i.e. meaning 1, meaning 2, ...
+MEANING_HEADERS = dict(
+    ru=['_заголовок', '_з'],
+)
+
+Q_LANGUAGE_CODES = dict(
+    ru='Q7737'
+)
+
+Q_LANGUAGE_WIKTIONARIES = dict(
+    ru='Q22116890',
+)
+
+Q_SOURCES = dict(
+    ru={
+        'оэсря': 'Q67130942',
+    },
+)
+
+
 re_template_names = re.compile(
     r'^(([tT]emplate|[шШ]аблон):)?' +
     r'('
@@ -75,6 +95,7 @@ def double_title_case(dataset: Union[set, dict]):
                 dataset.add(add)
             else:
                 dataset[add] = dataset[title]
+    return dataset
 
 
 root_templates = {
@@ -139,7 +160,7 @@ re_ignore_template_prefixes = re.compile(
     r'|#lst:|formatnum:|[мМ]ета:|[кК]нига:|[мМ]етаграммы:|родств-'
     r')')
 
-ignore_templates = {
+ignore_templates = double_title_case({
     '-', '--', '--+', '-ание', '-атель', '-ация', '-ение', '-ист', '-ка', '3л.', '?', '??', '^', 'addoncat', 'anchor',
     'aslinks', 'bagua nav', 'Brückner', 'cite web', 'clear', 'comment', 'commons', 'Cquote', 'Cyrs', 'de', 'en', 'es',
     'ESJČ', 'etym-lang', 'f', 'f60', 'fonts', 'forms', 'fr', 'fr0', 'fr1', 'fr2', 'fr4', 'fr6', 'frD', 'frE', 'freq',
@@ -210,6 +231,4 @@ ignore_templates = {
     'ювел.', 'юр.', 'юрид.', 'ЯИ', 'ЯН', 'ЯРГ',
     'Форма-мест', 'форма-гл', 'форма-прил', 'форма-сущ', 'Форма-числ', 'форма-прич', 'эзот.', 'тех.жарг.',
     'дееприч.', 'прич.', 'Фам Козёл', 'Фам 0', 'Суту́гина', 'Фам рь',
-}
-
-double_title_case(ignore_templates)
+})

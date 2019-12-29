@@ -48,7 +48,7 @@ def remove_stress(word):
 
 @dataclass
 class Config(LogConfig):
-    lang: str
+    lang_code: str
     wiktionary: MwSite
     wikidata: MwSite
     wdqs: WikidataQueryService

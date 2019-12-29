@@ -5,6 +5,7 @@ from typing import Iterable, Tuple, Union
 
 from pywikiapi import to_timestamp, to_datetime
 
+from lexicator.consts import Q_LANGUAGE_CODES
 from lexicator.wikicache import WikidataQueryService
 from lexicator.wikicache.PageContent import PageContent
 from lexicator.wikicache.WikidataQueryService import entity_id
@@ -14,12 +15,13 @@ from lexicator.wikicache.utils import trim_timedelta, to_json, LogConfig, MwSite
 
 
 class LexemeDownloader(WikipageDownloader):
-    def __init__(self, wikidata_site: MwSite, wdqs_site: WikidataQueryService, q_language: str,
-                 log_config: LogConfig = None):
+    def __init__(self, wikidata_site: MwSite, wdqs_site: WikidataQueryService,
+                 lang_code: str, log_config: LogConfig):
         super().__init__(site=wikidata_site, namespace=NS_LEXEME, log_config=log_config)
+        self.lang_code = lang_code
         self.find_recent_changes_query['rctype'] = 'log'  # only look at the log entries
         self.wdqs = wdqs_site
-        self.q_language = q_language
+        self.q_language = Q_LANGUAGE_CODES[lang_code]
 
     def query_wdqs(self, last_change: datetime = None, get_lemma=False, thorough=False):
         # Use thorough for recursive check of all redirects - slower
@@ -89,7 +91,7 @@ SELECT ?lexemeId ?ts WHERE {{
         if p:
             data = json.loads(p.content)
             p = dataclasses.replace(
-                p, data=data['lemmas']['ru']['value'], content=to_json(data))
+                p, data=data['lemmas'][self.lang_code]['value'], content=to_json(data))
         return p
 
     # def get_existing_lexemes(self) -> Dict[str, Dict[str, List]]:
@@ -98,7 +100,7 @@ SELECT ?lexemeId ?ts WHERE {{
     #     category_ids = self.lexical_categories.ids()
     #     # list of lexemes per grammatical category
     #     entities = list_to_dict_of_lists(
-    #         (l for l in self.lexemes.get() if 'ru' in l.lemmas and l.lexicalCategory in category_ids),
+    #         (l for l in self.lexemes.get() if self.lang_code in l.lemmas and l.lexicalCategory in category_ids),
     #         lambda l: category_ids[l.lexicalCategory]
     #     )
     #     count = sum((len(v) for v in entities.values()))
@@ -106,7 +108,7 @@ SELECT ?lexemeId ?ts WHERE {{
     #         print(f'{len(self.lexemes.get()) - count} entities have not been recognized')
     #     # convert all lists into lemma -> list, where most lists will just have one element
     #     return {
-    #         k: list_to_dict_of_lists(v, lambda l: l.lemmas.ru.value)
+    #         k: list_to_dict_of_lists(v, lambda l: l.lemmas[self.lang_code].value)
     #         for k, v in entities.items()
     #     }
     #

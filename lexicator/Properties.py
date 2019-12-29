@@ -216,14 +216,6 @@ P_HYPHENATION = Property('P5279', 'hyphenation', 'string')
 P_DESCRIBED_BY = Property('P1343', 'described-by', 'wikibase-item')
 
 P_IMPORTED_FROM_WM = Property('P143', 'imported-from-wm', 'wikibase-item', is_qualifier=True)
-Q_RU_WIKTIONARY = 'Q22116890'
-
-Q_RUSSIAN_LANG = 'Q7737'
-RUSSIAN_PRE_REFORM_ID = 'ru-x-Q2442696'
-
-Q_SOURCES = {
-    'оэсря': 'Q67130942',
-}
 
 # SELECT ?idLabel ?id WHERE {
 #   ?id wdt:P31 wd:Q82042.
@@ -323,6 +315,8 @@ Q_FEATURES = {
     'present tense': 'Q192613',  # настоящего времени
     'future tense': 'Q501405',  # настоящего времени
 }
+
+RUSSIAN_PRE_REFORM_ID = 'ru-x-Q2442696'
 
 Q_ZAL_ADJ_CLASSES = {
     "(мс 6*a)": "Q67537172",
@@ -514,3 +508,5 @@ Q_ZAL_NOUN_CLASSES = {
 # LAST	P1552	Q66605819
 # LAST	P1552	Q66459699
 # LAST	P1552	Q66624434
+
+
