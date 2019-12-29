@@ -6,7 +6,7 @@ from lexicator.Storage import Storage
 from lexicator.WikidataUploader import WikidataUploader
 
 config = Config(
-    lang='ru',
+    lang_code='ru',
     wiktionary=get_site('ru.wiktionary.org', True),
     wikidata=get_site('www.wikidata.org', True),
     wdqs=WikidataQueryService(),

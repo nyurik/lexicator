@@ -5,12 +5,12 @@ from typing import Iterable, Tuple, Union
 
 from pywikiapi import to_timestamp, to_datetime
 
-from lexicator.consts import Q_LANGUAGE_CODES
+from lexicator.consts.common import Q_LANGUAGE_CODES
 from lexicator.wikicache import WikidataQueryService
 from lexicator.wikicache.PageContent import PageContent
 from lexicator.wikicache.WikidataQueryService import entity_id
 from lexicator.wikicache.WikipageDownloader import WikipageDownloader
-from lexicator.wikicache.consts import NS_LEXEME
+from lexicator.consts.consts import NS_LEXEME
 from lexicator.wikicache.utils import trim_timedelta, to_json, LogConfig, MwSite
 
 

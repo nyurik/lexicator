@@ -5,7 +5,7 @@ from typing import Set
 from time import sleep
 
 from lexicator.wikicache.ContentStore import ContentStore
-from lexicator.Properties import Q_PART_OF_SPEECH
+from lexicator.consts.consts import Q_PART_OF_SPEECH
 from lexicator.UpdateWiktionaryWithLexemeId import UpdateWiktionaryWithLexemeId
 from lexicator.wikicache.utils import to_json
 

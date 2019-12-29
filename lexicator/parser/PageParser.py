@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 import re
 from dataclasses import dataclass
@@ -9,21 +11,16 @@ from mwparserfromhell import parse as mw_parse
 from mwparserfromhell.nodes import Argument, Template, Text, Tag, Wikilink, Heading, HTMLEntity, Comment, ExternalLink
 from mwparserfromhell.nodes.extras import Parameter
 
-from lexicator.consts import root_header_templates, ignore_templates, re_ignore_template_prefixes, root_templates, \
-    re_template_names, re_known_headers, re_root_templates, re_root_templates_full_str
+from lexicator.consts.common import root_templates, wikipage_must_have, ignore_templates, re_ignore_template_prefixes, \
+    re_template_names, ignore_pages_if_template, MEANING_HEADERS
+from lexicator.consts.utils import double_title_case
 from lexicator.wikicache.ContentStore import ContentStore
 from lexicator.wikicache.PageContent import PageContent
 from lexicator.wikicache.PageFilter import PageFilter
-from lexicator.wikicache.consts import NS_TEMPLATE
+from lexicator.consts.consts import NS_TEMPLATE
 from lexicator.wikicache.utils import LogConfig
 
 ignore_types = {Text, Tag, Wikilink, Comment, ExternalLink, HTMLEntity}
-
-
-@dataclass
-class SpecialTemplate:
-    flag: str
-    action: str
 
 
 def params_to_dict(params):
@@ -36,7 +33,7 @@ def params_to_dict(params):
 
 
 # noinspection PyUnusedLocal
-def flag_template(self: 'TemplateParser', code, template: Template, flag, index=None):
+def flag_template(self: TemplateParser, code, template: Template, flag, index=None):
     if index and template.has(index):
         param = template.get(index)
         self.apply_wikitext(param.value)
@@ -67,7 +64,7 @@ custom_templates2 = {
 }
 
 # Do not expand any root templates other than the ones already listed above
-expand_template = {t: (lambda arg: False) for t in root_templates}
+expand_template = {t: (lambda arg: False) for t in root_templates['ru']}
 expand_template['inflection сущ ru'] = lambda arg: arg.has('form') and str(arg.get('form').value).strip()
 expand_template['Inflection сущ ru'] = expand_template['inflection сущ ru']
 
@@ -79,16 +76,23 @@ re_allowed_extras = re.compile(r'^[и, \n/!]+$')
 class PageParser(PageFilter):
     # existing_entities: Dict[str, Dict[str, List]]
 
-    def __init__(self, source: ContentStore, wiki_templates: ContentStore, log_config: LogConfig) -> None:
+    def __init__(self, lang_code: str, source: ContentStore, wiki_templates: ContentStore,
+                 log_config: LogConfig) -> None:
         super().__init__(log_config=log_config, source=source)
+        self.lang_code = lang_code
         self.wiki_templates = wiki_templates
         self.templates_no_ns: Dict[str, PageContent] = {}
+        self.re_wikipage_must_have = re.compile('|'.join((v for v in wikipage_must_have[lang_code])))
+        self.root_templates = root_templates[lang_code]
+        self.re_root_templates = re.compile('|'.join(self.root_templates))
+        self.re_root_templates_full_str = re.compile(r'^(' + '|'.join(self.root_templates) + r')$')
+        self.ignore_templates = double_title_case(ignore_templates[lang_code])
+        self.re_ignore_template_prefixes = re.compile(
+            r'^(' + '|'.join(double_title_case(re_ignore_template_prefixes[lang_code])) + r')')
 
     def process_page(self, page: PageContent, force: Union[bool, str]) -> PageContent:
-        if page.content and re_known_headers.search(page.content) and (
-                re_template_names.search(page.content) or
-                re_root_templates.search(page.content)):
-            state = ParserState(page, self.wiki_templates, self.templates_no_ns, force)
+        if page.content and self.is_valid_page(page):
+            state = ParserState(self, page, force)
             TemplateParser('', page.title, page.content, {}, state).parse_page()
             if state.warnings:
                 print(f"Warnings for {page.title}:\n  " + '\n  '.join(state.warnings))
@@ -97,30 +101,37 @@ class PageParser(PageFilter):
                 content = None
             return dataclasses.replace(page, data=state.result, content=content)
 
+    def is_valid_page(self, page: PageContent):
+        return self.re_wikipage_must_have.search(page.content) and (
+                re_template_names[self.lang_code].search(page.content)
+                or
+                self.re_root_templates.search(page.content)
+        )
+
 
 @dataclass
 class ParserState:
-    def __init__(self, page: PageContent, wiki_templates: ContentStore,
-                 templates_no_ns: Dict[str, PageContent], force) -> None:
-        self.flags = None
+    def __init__(self, page_parser: PageParser, page: PageContent, force) -> None:
+        self.page_parser = page_parser
         self.page = page
-        self.warnings = []
-        self.wiki_templates = wiki_templates
-        self.templates_no_ns = templates_no_ns
         self.force = force
+
+        self.flags = None
+        self.warnings = []
         self.result = []
-        self.header: List[str] = None
+        self.header: List[str] = []
 
     def get_template(self, name):
-        if not self.templates_no_ns:
-            self.templates_no_ns.update(
-                {v.title.split(':', 1)[1]: v for v in self.wiki_templates.get_all() if ':' in v.title})
-        if not self.force and name in self.templates_no_ns:
-            return self.templates_no_ns[name]
+        templates_no_ns = self.page_parser.templates_no_ns
+        if not templates_no_ns:
+            templates_no_ns.update(
+                {v.title.split(':', 1)[1]: v for v in self.page_parser.wiki_templates.get_all() if ':' in v.title})
+        if not self.force and name in templates_no_ns:
+            return templates_no_ns[name]
         page = None
-        for page in self.wiki_templates.get_multiple(['Шаблон:' + name], force=self.force):
+        for page in self.page_parser.wiki_templates.get_multiple(['Шаблон:' + name], force=self.force):
             break
-        self.templates_no_ns[name] = page
+        templates_no_ns[name] = page
         return page
 
     def add_result(self, name, params):
@@ -158,14 +169,16 @@ class TemplateParser:
             elif typ == Template:
                 self.apply_wikitext(arg.name)
                 name = str(arg.name).strip()
-                if name in ignore_templates:
+                if name in self.state.page_parser.ignore_templates:
                     continue
                 name = self.to_template_name(name)
-                if name in ignore_templates:
+                if name in self.state.page_parser.ignore_templates:
                     continue
+                if name in ignore_pages_if_template['ru']:
+                    return None  # ignore these pages
 
-                root_match = re_root_templates_full_str.match(name)
-                if root_match or re_template_names.match(name):
+                root_match = self.state.page_parser.re_root_templates_full_str.match(name)
+                if root_match or re_template_names[self.state.page_parser.lang_code].match(name):
                     # Remove well-known params
                     for param in list(arg.params):
                         param_name = str(param.name)
@@ -179,7 +192,7 @@ class TemplateParser:
                                 argtyp = type(arg2)
                                 if argtyp == Text:
                                     extras += arg2.value
-                                elif argtyp == Template and str(arg2.name) in root_templates:
+                                elif argtyp == Template and str(arg2.name) in self.state.page_parser.root_templates:
                                     has_templates = True
                                 elif argtyp == Wikilink:
                                     extras += str(arg2.text) if arg2.text else str(arg2.title)
@@ -201,9 +214,7 @@ class TemplateParser:
                         if new_arg:
                             self.parse_section(code, new_arg)
 
-                elif name == 'к удалению':
-                    return None  # ignore these pages
-                elif not re_ignore_template_prefixes.match(name):
+                elif not self.state.page_parser.re_ignore_template_prefixes.match(name):
                     self.warn(f"{self.state.header} {self.word}: Unknown template {arg}")
             elif typ == Heading:
                 if len(self.state.header) < arg.level - 2:
@@ -215,7 +226,7 @@ class TemplateParser:
                 templates = arg.title.filter_templates(recursive=False)
                 if len(templates) == 1:
                     name = str(templates[0].name).strip()
-                    if name in root_header_templates:
+                    if name in MEANING_HEADERS[self.state.page_parser.lang_code]:
                         template = {name: params_to_dict(templates[0].params)}
                         code.remove(templates[0])
                 if templates and not template:
@@ -291,7 +302,7 @@ class TemplateParser:
                     self.repl_conditional(arg, code, key)
                 elif name.startswith('#ifexist:'):
                     key = name[len('#ifexist:'):].strip().replace('Шаблон:', '').strip()
-                    self.repl_conditional(arg, code, 1 if key in self.state.templates_no_ns else 2)
+                    self.repl_conditional(arg, code, 1 if key in self.state.page_parser.templates_no_ns else 2)
                 else:
                     raise ValueError(f'Unhandled special {name}')
             else:
@@ -299,7 +310,8 @@ class TemplateParser:
                     self.apply_value(code, param)
                 if name in custom_templates:
                     custom_templates[name](self, code, arg)
-                elif (name in expand_template and not expand_template[name](arg)) or name in ignore_templates:
+                elif (name in expand_template and not expand_template[name](arg)) or \
+                        name in self.state.page_parser.ignore_templates:
                     # self.warn(f"Template {name} should not be expanded")
                     return
                 else:

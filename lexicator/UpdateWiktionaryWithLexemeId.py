@@ -3,7 +3,7 @@ from mwparserfromhell.nodes import Template, Text, Tag, Wikilink, Heading, HTMLE
 
 from lexicator.utils import list_to_dict_of_lists
 from lexicator.wikicache import ContentStore
-from lexicator.wikicache.utils import MwSite, LogConfig
+from lexicator.wikicache.utils import MwSite, LogConfig, to_json
 
 IGNORE_TYPES = {Text, Tag, Wikilink, Comment, ExternalLink, HTMLEntity}
 LEX_TEMPLATE = 'Лексема в Викиданных'

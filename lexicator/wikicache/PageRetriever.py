@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class PageRetriever(ABC):
     def __init__(self, log_config: LogConfig = None, source: ContentStore = None, is_remote: bool = False) -> None:
         super().__init__()
-        self.log_config = log_config or LogConfig()
+        self.log_config = log_config or LogConfig(print_warnings=True, verbose=True)
         self.source: ContentStore = source
         self.is_remote = is_remote
 

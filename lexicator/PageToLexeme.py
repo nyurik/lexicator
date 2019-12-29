@@ -3,15 +3,16 @@ from __future__ import annotations
 from typing import List, TYPE_CHECKING
 
 from lexicator.Properties import *
+from lexicator.consts.common import word_types, Q_LANGUAGE_CODES, Q_LANGUAGE_WIKTIONARIES, root_templates, \
+    template_to_type, Q_SOURCES
+from lexicator.consts.consts import re_file, word_types_IPA, Q_PART_OF_SPEECH, Q_FEATURES
 from lexicator.wikicache.utils import json_key
-from lexicator.TemplateProcessor import TemplateProcessorBase
-from lexicator.TemplateProcessorAdjective import Adjective, Participle
-from lexicator.TemplateProcessorCommon import RuTranscription, RuTranscriptions, RuPreReformSpelling, RuHyphenation
-from lexicator.TemplateProcessorNouns import Noun, UnknownNoun
+from lexicator.processor.TemplateProcessor import TemplateProcessorBase
+from lexicator.processor.TemplateProcessorAdjective import Adjective, Participle
+from lexicator.processor.TemplateProcessorCommon import RuTranscription, RuTranscriptions, RuPreReformSpelling, RuHyphenation
+from lexicator.processor.TemplateProcessorNouns import Noun, UnknownNoun
 from lexicator.TemplateUtils import test_str
-from lexicator.consts import root_templates, word_types, template_to_type, re_file, word_types_IPA, Q_LANGUAGE_CODES, \
-    Q_LANGUAGE_WIKTIONARIES, Q_SOURCES
-from lexicator.utils import remove_stress
+from lexicator.consts.utils import remove_stress
 
 if TYPE_CHECKING:
     from lexicator.wikicache.ContentStore import ContentStore
@@ -150,16 +151,16 @@ class LexemeParserState:
                     grammar_type.intersection_update(typ)
 
         for header, template, params in self.data_section:
-            if template in root_templates:
-                add_types(root_templates[template])
+            if template in root_templates['ru']:
+                add_types(root_templates['ru'][template])
             else:
-                for rx, typ in template_to_type:
+                for rx, typ in template_to_type['ru']:
                     if rx.match(template):
                         add_types(typ)
         if not grammar_type:
             raise ValueError(f"Unknown grammar type:\n{self.data_section}")
         if len(grammar_type) > 1:
-            if grammar_type == root_templates['прил']:
+            if grammar_type == root_templates['ru']['прил']:
                 return 'adjective'
             raise ValueError(
                 f"Multiple types found in {self.title} - {', '.join(grammar_type)}:\n{self.data_section}")

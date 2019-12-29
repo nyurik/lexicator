@@ -1,7 +1,9 @@
 import re
 
-from lexicator.Properties import Q_FEATURES, P_INFLECTION_CLASS, Q_ZAL_ADJ_CLASSES, P_HAS_QUALITY
-from lexicator.TemplateProcessor import TemplateProcessor
+from lexicator.Properties import P_INFLECTION_CLASS, P_HAS_QUALITY
+from lexicator.consts.consts import Q_FEATURES
+from lexicator.consts.ru import Q_ZAL_ADJ_CLASSES
+from lexicator.processor.TemplateProcessor import TemplateProcessor
 from lexicator.TemplateUtils import normalize_zal
 
 

@@ -2,7 +2,7 @@ import dataclasses
 from typing import Dict, Union
 
 from lexicator.PageToLexeme import PageToLexeme
-from lexicator.consts import MEANING_HEADERS
+from lexicator.consts.common import MEANING_HEADERS
 from lexicator.wikicache.ContentStore import ContentStore
 from lexicator.wikicache.PageContent import PageContent
 from lexicator.wikicache.PageFilter import PageFilter
@@ -17,7 +17,7 @@ class PageToLexemsFilter(PageFilter):
         self.source = source
         self.resolvers = resolvers
         self.handled_types = {'noun', 'adjective', 'participle'}
-        self.meanings_headers = set(MEANING_HEADERS[lang_code])
+        self.meanings_headers = set((f"_{v}" for v in MEANING_HEADERS[lang_code]))
 
     def process_page(self, page: PageContent, force: Union[bool, str]) -> Union[PageContent, None]:
         if not page.data:

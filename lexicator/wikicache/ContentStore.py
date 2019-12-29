@@ -170,14 +170,14 @@ class ContentStore:
     def store_object(self, value: PageContent) -> None:
         self.save_pages([value])
 
-    def refresh(self, filters=None, delta: Union[timedelta, bool] = None) -> Iterable[str]:
+    def refresh(self, filters=None, delta: Union[timedelta, bool] = False) -> Iterable[str]:
         return self._track_progress(self.refresher, filters, delta)
 
-    def refresher(self, progress, reporter, filters, delta: Union[timedelta, bool]) -> Iterable[str]:
+    def refresher(self, progress, reporter, filters, delta: Union[timedelta, bool] = False) -> Iterable[str]:
         if not self.can_refresh():
             raise ValueError(f"Unable to refresh {self.filename}")
 
-        start_ts = datetime.utcnow()
+        # start_ts = datetime.utcnow()
         self.init_retriever()
         last_change = self.get_last_change()
         if delta:

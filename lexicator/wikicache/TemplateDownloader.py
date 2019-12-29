@@ -5,7 +5,7 @@ from typing import Callable, Union
 
 from lexicator.wikicache.PageContent import PageContent
 from lexicator.wikicache.WikipageDownloader import WikipageDownloader
-from lexicator.wikicache.consts import NS_TEMPLATE
+from lexicator.consts.consts import NS_TEMPLATE
 from lexicator.wikicache.utils import LogConfig, MwSite
 
 

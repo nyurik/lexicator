@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from lexicator.PageDownloader import TemplateDownloaderRu
-from lexicator.PageParser import PageParser
+from lexicator.RuTemplateDownloader import TemplateDownloaderRu
+from lexicator.parser.PageParser import PageParser
 from lexicator.PageToLexemsFilter import PageToLexemsFilter
 from lexicator.ResolverViaMwParse import ResolveNounRu, ResolveTranscriptionsRu, ResolveTranscriptionRu
 from lexicator.UpdateWiktionaryWithLexemeId import UpdateWiktionaryWithLexemeId
@@ -30,7 +30,7 @@ class Storage:
 
         self.parsed_wiki_words = ContentStore(
             path / 'parsed.wiktionary.db',
-            PageParser(self.wiki_words, self.wiki_templates, log_config))
+            PageParser(config.lang_code, self.wiki_words, self.wiki_templates, log_config))
 
         self.resolve_noun_ru = ContentStore(
             path / 'resolve_noun.db',

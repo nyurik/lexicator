@@ -4,7 +4,7 @@ from typing import List, Callable, Union
 
 from lexicator.Properties import Property, ClaimValue
 from lexicator.TemplateUtils import normalize
-from lexicator.consts import root_templates
+from lexicator.consts.common import root_templates
 
 
 class TemplateProcessorBase(ABC):
@@ -22,7 +22,7 @@ class TemplateProcessor(TemplateProcessorBase, ABC):
     def __init__(self, template: str, known_params: List[str], is_primary: bool = False, autorun: bool = True) -> None:
         super().__init__(template, is_primary, autorun)
         self.known_params = known_params
-        self.expects_type = root_templates[template] if template in root_templates else None
+        self.expects_type = root_templates['ru'][template] if template in root_templates else None
 
     def process(self, parser, raw_params):
         if self.expects_type and parser.grammar_type not in self.expects_type:

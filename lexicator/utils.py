@@ -3,14 +3,12 @@ from dataclasses import dataclass
 from typing import NewType, Tuple, Union, Dict, TypeVar
 
 import requests
-import unicodedata
-from pywikiapi import Site, AttrDict
+from pywikiapi import AttrDict
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 # template-name, params-dict (or none)
 from lexicator.wikicache import WikidataQueryService
-from lexicator.consts import STRESS_SYMBOL_PRI, STRESS_SYMBOL_SEC
 from lexicator.wikicache.utils import LogConfig, MwSite
 
 TemplateType = NewType('TemplateType', Tuple[str, Union[Dict[str, str], None]])
@@ -39,11 +37,6 @@ def list_to_dict_of_lists(items, key, item_extractor=None):
                 item = item_extractor(item)
             result[k].append(item)
     return result
-
-
-def remove_stress(word):
-    return unicodedata.normalize(
-        'NFC', unicodedata.normalize('NFD', word).replace(STRESS_SYMBOL_PRI, '').replace(STRESS_SYMBOL_SEC, ''))
 
 
 @dataclass

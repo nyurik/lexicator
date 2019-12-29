@@ -1,5 +1,7 @@
 from lexicator.Properties import *
-from lexicator.TemplateProcessor import TemplateProcessor
+from lexicator.consts.consts import Q_FEATURES
+from lexicator.consts.ru import Q_ZAL_NOUN_CLASSES
+from lexicator.processor.TemplateProcessor import TemplateProcessor
 from lexicator.TemplateUtils import validate_zaliznyak1, validate_asterisk, plurale_tantum, singularia_tantum, \
     get_bool_param, normalize_zal
 

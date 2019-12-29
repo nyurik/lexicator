@@ -3,7 +3,7 @@ from typing import Callable, Dict, Iterable
 
 from lexicator.wikicache.PageContent import PageContent
 from lexicator.wikicache.WikipageDownloader import WikipageDownloader
-from lexicator.wikicache.consts import NS_MAIN
+from lexicator.consts.consts import NS_MAIN
 from lexicator.wikicache.utils import LogConfig, MwSite
 
 

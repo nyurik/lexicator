@@ -8,7 +8,7 @@ def ru_mono(v):
     return mono_value('ru', v)
 
 
-re_valid_str = re.compile(r'^[^\'\<>]+$')
+re_valid_str = re.compile(r'^[^\'<>]+$')
 
 
 def test_str(v, param):
