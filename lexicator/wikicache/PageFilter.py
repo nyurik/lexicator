@@ -3,8 +3,8 @@ from abc import abstractmethod
 from datetime import datetime
 from typing import Iterable, Callable, Dict, Tuple, Union
 
-from lexicator.PageRetriever import PageRetriever
-from lexicator.utils import PageContent
+from lexicator.wikicache.PageRetriever import PageRetriever
+from lexicator.wikicache.PageContent import PageContent
 
 
 def update_content(page, data, content=None):
@@ -40,7 +40,7 @@ class PageFilter(PageRetriever):
                 if res:
                     yield res
             except (ValueError, KeyError) as err:
-                if self.config.print_warnings:
+                if self.log_config.print_warnings:
                     print(f"***** {page.title} ***** {'key not found' if isinstance(err, KeyError) else ''}: {err}")
                     # raise
                 yield update_content(page, None, str(err))

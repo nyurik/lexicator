@@ -19,7 +19,6 @@ class TemplateProcessorBase(ABC):
 
 
 class TemplateProcessor(TemplateProcessorBase, ABC):
-
     def __init__(self, template: str, known_params: List[str], is_primary: bool = False, autorun: bool = True) -> None:
         super().__init__(template, is_primary, autorun)
         self.known_params = known_params

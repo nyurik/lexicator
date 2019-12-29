@@ -18,7 +18,8 @@ class Validator:
             except ValueError as err:
                 print(f'ERR {word:13} {idx + 1 if idx > 0 else ""}  {err}, {form}')
 
-    def validate_form(self, word, form):
+    @staticmethod
+    def validate_form(word, form):
         if len(form) == 2:
             template, params = form
             warnings = []

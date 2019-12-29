@@ -3,17 +3,17 @@ from typing import Dict, Union
 
 from pywikiapi import Site
 
-from lexicator.ContentStore import ContentStore
-from lexicator.PageFilter import PageFilter
 from lexicator.PageToLexeme import PageToLexeme
-from lexicator.utils import PageContent, Config
+from lexicator.wikicache.ContentStore import ContentStore
+from lexicator.wikicache.PageContent import PageContent
+from lexicator.wikicache.PageFilter import PageFilter
+from lexicator.wikicache.utils import LogConfig
 
 
 class PageToLexemsFilter(PageFilter):
-
-    def __init__(self, config: Config, source: ContentStore, wikidata: Site,
+    def __init__(self, log_config: LogConfig, source: ContentStore, wikidata: Site,
                  resolvers: Dict[str, ContentStore]) -> None:
-        super().__init__(config, source)
+        super().__init__(log_config, source)
         self.source = source
         self.wikidata = wikidata
         self.resolvers = resolvers

@@ -16,14 +16,19 @@ Options:
 """
 from docopt import docopt
 from pathlib import Path
-from lexicator import Config, Storage, get_site, WikidataQueryService, to_json, Validator
+
+from lexicator.Storage import Storage
+from lexicator.Validator import Validator
+from lexicator.utils import Config, get_site
+from lexicator.wikicache.WikidataQueryService import WikidataQueryService
+from lexicator.wikicache.utils import to_json
 
 
 def main(arguments):
     config = Config(
-        use_bot_limits=False,
-        wiktionary=get_site('ru.wiktionary.org'),
-        wikidata=get_site('www.wikidata.org'),
+        lang='ru',
+        wiktionary=get_site('ru.wiktionary.org', True),
+        wikidata=get_site('www.wikidata.org', True),
         wdqs=WikidataQueryService(),
         parse_fields=None,
         # parse_fields=['acc-sg'],

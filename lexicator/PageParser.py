@@ -9,11 +9,13 @@ from mwparserfromhell import parse as mw_parse
 from mwparserfromhell.nodes import Argument, Template, Text, Tag, Wikilink, Heading, HTMLEntity, Comment, ExternalLink
 from mwparserfromhell.nodes.extras import Parameter
 
-from lexicator.ContentStore import ContentStore
-from lexicator.PageFilter import PageFilter
 from lexicator.consts import root_header_templates, ignore_templates, re_ignore_template_prefixes, root_templates, \
-    NS_TEMPLATE, re_template_names, re_known_headers, re_root_templates, re_root_templates_full_str
-from lexicator.utils import PageContent, Config
+    re_template_names, re_known_headers, re_root_templates, re_root_templates_full_str
+from lexicator.wikicache.ContentStore import ContentStore
+from lexicator.wikicache.PageContent import PageContent
+from lexicator.wikicache.PageFilter import PageFilter
+from lexicator.wikicache.consts import NS_TEMPLATE
+from lexicator.wikicache.utils import LogConfig
 
 ignore_types = {Text, Tag, Wikilink, Comment, ExternalLink, HTMLEntity}
 
@@ -77,8 +79,8 @@ re_allowed_extras = re.compile(r'^[и, \n/!]+$')
 class PageParser(PageFilter):
     # existing_entities: Dict[str, Dict[str, List]]
 
-    def __init__(self, config: Config, source: ContentStore, wiki_templates: ContentStore) -> None:
-        super().__init__(config, source)
+    def __init__(self, source: ContentStore, wiki_templates: ContentStore, log_config: LogConfig) -> None:
+        super().__init__(log_config=log_config, source=source)
         self.wiki_templates = wiki_templates
         self.templates_no_ns: Dict[str, PageContent] = {}
 

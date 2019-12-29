@@ -4,10 +4,10 @@ from typing import Set
 
 from time import sleep
 
-from lexicator.ContentStore import ContentStore
+from lexicator.wikicache.ContentStore import ContentStore
 from lexicator.Properties import Q_PART_OF_SPEECH
 from lexicator.UpdateWiktionaryWithLexemeId import UpdateWiktionaryWithLexemeId
-from lexicator.utils import to_json
+from lexicator.wikicache.utils import to_json
 
 presets = {
 }
@@ -21,7 +21,6 @@ allowed_types = {Q_PART_OF_SPEECH[t] for t in [
 
 
 class WikidataUploader:
-
     def __init__(self, site, desired_lexemes: ContentStore, existing_lexemes: ContentStore,
                  wiktionary_updater: UpdateWiktionaryWithLexemeId) -> None:
         self.site = site

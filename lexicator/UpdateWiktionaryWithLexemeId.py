@@ -1,7 +1,9 @@
 from mwparserfromhell import parse as mw_parse
 from mwparserfromhell.nodes import Template, Text, Tag, Wikilink, Heading, HTMLEntity, Comment, ExternalLink
 
-from lexicator import list_to_dict_of_lists, ContentStore, to_json
+from lexicator.utils import list_to_dict_of_lists
+from lexicator.wikicache import ContentStore
+from lexicator.wikicache.utils import MwSite, LogConfig
 
 IGNORE_TYPES = {Text, Tag, Wikilink, Comment, ExternalLink, HTMLEntity}
 LEX_TEMPLATE = 'Лексема в Викиданных'
@@ -15,12 +17,12 @@ def format_lex_ref(lexeme_id):
 
 
 class UpdateWiktionaryWithLexemeId:
-
-    def __init__(self, wiki_words, existing_lexemes: ContentStore, config) -> None:
+    def __init__(self, log_config: LogConfig, wiki_words: ContentStore, existing_lexemes: ContentStore,
+                 wiktionary: MwSite) -> None:
+        self.log_config = log_config
         self.wiki_words = wiki_words
         self.existing_lexemes = existing_lexemes
-        self.site = config.wiktionary
-        self.verbose = config.verbose
+        self.site = wiktionary
 
     def run(self):
         self.wiki_words.refresh()
@@ -77,7 +79,7 @@ class UpdateWiktionaryWithLexemeId:
                 if name == LEX_TEMPLATE and (inside_meaning or 0) == lexeme_idx:
                     page_lex_id = str(arg.get(1)).strip()
                     if page_lex_id == lexeme_id:
-                        if self.verbose:
+                        if self.log_config.verbose:
                             print(f'Word {word} already has lexeme = {lexeme_id}, skipping')
                         return
                     else:

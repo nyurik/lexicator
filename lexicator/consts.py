@@ -3,13 +3,6 @@ from typing import Union
 
 import unicodedata
 
-NS_MAIN = 0
-NS_USER = 2
-NS_USER_TALK = 3
-NS_TEMPLATE = 10
-NS_TEMPLATE_TALK = 11
-NS_LEXEME = 146
-
 HTML_BR_TAGS = {'<br>', '<br >', '<br/>', '<br />'}
 
 re_template_names = re.compile(

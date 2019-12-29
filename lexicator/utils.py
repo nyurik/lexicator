@@ -1,42 +1,30 @@
-import dataclasses
-import json
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from typing import Iterable, NewType, Tuple, Union, Dict, Any, TypeVar, List
+from typing import NewType, Tuple, Union, Dict, TypeVar
 
 import requests
 import unicodedata
-from mwparserfromhell.nodes import Template
-from mwparserfromhell.nodes.extras import Parameter
 from pywikiapi import Site, AttrDict
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 # template-name, params-dict (or none)
-from lexicator import WikidataQueryService
+from lexicator.wikicache import WikidataQueryService
 from lexicator.consts import STRESS_SYMBOL_PRI, STRESS_SYMBOL_SEC
+from lexicator.wikicache.utils import LogConfig, MwSite
 
 TemplateType = NewType('TemplateType', Tuple[str, Union[Dict[str, str], None]])
 
 T = TypeVar('T')
 
 
-def to_json(obj, pretty=False):
-    if dataclasses.is_dataclass(obj):
-        obj = clean_empty_vals(dataclasses.asdict(obj))
-    if pretty:
-        return json.dumps(obj, ensure_ascii=False, indent=2)
-    else:
-        return json.dumps(obj, ensure_ascii=False, separators=(',', ':'))
-
-
-def get_site(host: str) -> Site:
+def get_site(host: str, use_bot_limits: bool) -> MwSite:
     retries = Retry(total=3, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
     session = requests.Session()
     session.mount('https://', HTTPAdapter(max_retries=retries))
 
-    site = Site(f'https://{host}/w/api.php', session=session, json_object_hook=AttrDict)
+    site = MwSite(f'https://{host}/w/api.php', use_bot_limits=use_bot_limits, session=session,
+                  json_object_hook=AttrDict)
     site.auto_post_min_size = 1500
 
     return site
@@ -53,62 +41,14 @@ def list_to_dict_of_lists(items, key, item_extractor=None):
     return result
 
 
-def batches(items: Iterable[T], batch_size: int) -> Iterable[List[T]]:
-    res = []
-    for value in items:
-        res.append(value)
-        if len(res) >= batch_size:
-            yield res
-            res = []
-    if res:
-        yield res
-
-
-def clean_empty_vals(obj: dict, empty_value=None):
-    return {k: v for k, v in obj.items() if v != empty_value}
-
-
-def trim_timedelta(td: timedelta) -> str:
-    return str(td + timedelta(seconds=1)).split('.', 1)[0]
-
-
-@dataclass(frozen=True)
-class PageContent:
-    title: str
-    timestamp: datetime = None
-    ns: int = None
-    revid: int = None
-    user: str = None
-    redirect: str = None
-    content: str = None
-    data: Any = None
-
-    def to_dict(self):
-        obj = clean_empty_vals(dataclasses.asdict(self))
-        return obj
-
-    # @staticmethod
-    # def from_dict(obj):
-    #     return PageContent(**obj)
-
-    def is_deleted(self):
-        return self.content is None and self.data is None and self.timestamp is None and self.redirect is None
-
-
-def params_to_wikitext(template):
-    return str(Template(template[0], params=[Parameter(k, v) for k, v in template[1].items()]))
-
-
 def remove_stress(word):
     return unicodedata.normalize(
         'NFC', unicodedata.normalize('NFD', word).replace(STRESS_SYMBOL_PRI, '').replace(STRESS_SYMBOL_SEC, ''))
 
 
 @dataclass
-class Config:
-    use_bot_limits: bool
-    wiktionary: Site
-    wikidata: Site
+class Config(LogConfig):
+    lang: str
+    wiktionary: MwSite
+    wikidata: MwSite
     wdqs: WikidataQueryService
-    print_warnings: bool
-    verbose: bool

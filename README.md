@@ -15,12 +15,12 @@ Data is parsed and prepared for the upload in multiple stages.
  At each stage, a [PageRetriever](lexicator/PageRetriever.py)-derived class generates some data result.
  Page retrievers can either download or process all pages, or get just the pages changed/created since
  the last run. Each page retriever is wrapped by an instance of
- [ContentStore](lexicator/ContentStore.py) - a generic sqlite-backed cache storage.
+ [ContentStore](lexicator/wikicache/ContentStore.py) - a generic sqlite-backed cache storage.
  All instances are stored in the [Storage](lexicator/Storage.py) singleton.
 
 There are several types of PageRetrievers:
 * **Downloaders** - uses MediaWiki API to download page content. Does minimal content processing.
-  * `DownloaderForTemplates` - downloads Wiktionary templates.
+  * `DownloaderForTemplatesRu` - downloads Wiktionary templates.
   * `DownloaderForWords` - downloads Wiktionary word pages.
   * `LexemeDownloader` - downloads Lexemes in a given language. Uses WDQS to find relevant lexemes, so the data might be stale for ~1min.
 * **Resolvers** - executes Lua modules via MW API in bulk to compute their results. Only works with the Lua modules that use a regular wiki template to render the results.

@@ -1,13 +1,14 @@
 from pathlib import Path
 
-from lexicator import get_site, WikidataQueryService, Config
+from lexicator.utils import Config, get_site
+from lexicator.wikicache.WikidataQueryService import WikidataQueryService
 from lexicator.Storage import Storage
 from lexicator.WikidataUploader import WikidataUploader
 
 config = Config(
-    use_bot_limits=True,
-    wiktionary=get_site('ru.wiktionary.org'),
-    wikidata=get_site('www.wikidata.org'),
+    lang='ru',
+    wiktionary=get_site('ru.wiktionary.org', True),
+    wikidata=get_site('www.wikidata.org', True),
     wdqs=WikidataQueryService(),
     print_warnings=True,
     verbose=False,
@@ -30,4 +31,4 @@ s.resolve_noun_ru.custom_refresh()
 s.desired_lexemes.refresh()
 
 u = WikidataUploader(config.wikidata, s.desired_lexemes, s.existing_lexemes, s.wiktionary_updater)
-u.run()
+# u.run()

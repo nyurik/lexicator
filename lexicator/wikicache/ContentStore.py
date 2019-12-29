@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timedelta
-from typing import Iterable, Callable, Set, Union
+from pathlib import Path
+from typing import Iterable, Callable, Set, Union, TypeVar
 
 from pywikiapi import to_timestamp
 from sqlalchemy import Column, Integer, Unicode, UnicodeText, DateTime
@@ -8,8 +9,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from lexicator.PageRetriever import PageRetriever
-from lexicator.utils import PageContent, batches, trim_timedelta, T
+from lexicator.wikicache.PageRetriever import PageRetriever
+from lexicator.wikicache.utils import batches, trim_timedelta
+from lexicator.wikicache.PageContent import PageContent
+
+T = TypeVar('T')
 
 
 def to_compact_json(data):
@@ -17,12 +21,12 @@ def to_compact_json(data):
 
 
 class ContentStore:
-    def __init__(self, filename, retriever: PageRetriever):
+    def __init__(self, filename: Path, retriever: PageRetriever):
         self.filename = filename
         self.retriever = retriever
         self.retriever_initialized = False
 
-        self.engine = create_engine('sqlite:///' + filename,
+        self.engine = create_engine(f'sqlite:///{filename}',
                                     # echo=True
                                     )
         self.Base = declarative_base(bind=self.engine)
@@ -288,10 +292,10 @@ class ContentStore:
         else:
             yield from (v.to_content() for v in query)
 
-    def dump_to_file(self, filename: str,
+    def dump_to_file(self, filename: Path,
                      page_filter: Callable[[PageContent], bool] = None,
                      transform: Callable[[dict], Iterable[dict]] = None):
-        with open(filename, "w+", encoding='utf-8') as file:
+        with filename.open("w+", encoding='utf-8') as file:
             for page in self.get_all():
                 if not page_filter or page_filter(page):
                     page_dict = page.to_dict()

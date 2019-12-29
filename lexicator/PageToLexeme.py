@@ -1,7 +1,9 @@
-from typing import List
+from __future__ import annotations
+
+from typing import List, TYPE_CHECKING
 
 from lexicator.Properties import *
-from lexicator.ResolverViaMwParse import json_key
+from lexicator.wikicache.utils import json_key
 from lexicator.TemplateProcessor import TemplateProcessorBase
 from lexicator.TemplateProcessorAdjective import Adjective, Participle
 from lexicator.TemplateProcessorCommon import TranscriptionRu, TranscriptionsRu, PreReformSpelling, Hyphenation
@@ -10,10 +12,12 @@ from lexicator.TemplateUtils import test_str
 from lexicator.consts import root_templates, word_types, template_to_type, re_file, word_types_IPA
 from lexicator.utils import remove_stress
 
+if TYPE_CHECKING:
+    from lexicator.wikicache.ContentStore import ContentStore
+
 
 class PageToLexeme:
-
-    def __init__(self, title, data_section, resolvers: Dict[str, 'ContentStore']) -> None:
+    def __init__(self, title, data_section, resolvers: Dict[str, ContentStore]) -> None:
         self.title = title
         self.data_section = data_section
         self.resolvers = resolvers
@@ -72,11 +76,10 @@ def set_imported_from_wkt(data):
     if 'claims' in data:
         for props in data['claims'].values():
             for claim in props:
-                set_refernces_on_new(claim, {P_IMPORTED_FROM_WM: Q_RU_WIKTIONARY})
+                set_references_on_new(claim, {P_IMPORTED_FROM_WM: Q_RU_WIKTIONARY})
 
 
 class LexemeParserState:
-
     def __init__(self, parent: PageToLexeme, data_section):
         self.parent = parent
         self.title = parent.title
@@ -194,7 +197,7 @@ class LexemeParserState:
                 refs = {P_DESCRIBED_BY: Q_SOURCES[param_value]}
             except KeyError:
                 raise ValueError(f"unable to set pronunciation reference: {param_value} not found in Q_SOURCES")
-            set_refernces_on_new(pron, refs)
+            set_references_on_new(pron, refs)
 
     def get_pronunciation(self, form_id, index):
         if form_id not in self.form_by_param:

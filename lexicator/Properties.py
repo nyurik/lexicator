@@ -30,7 +30,7 @@ def set_qualifiers_on_new(claim, qualifiers: Dict['Property', Any]):
             q[p.id] = [p.create_snak(v) for v in vals]
 
 
-def set_refernces_on_new(claim, references: Dict['Property', Any]):
+def set_references_on_new(claim, references: Dict['Property', Any]):
     if references and len(references) > 0:
         try:
             ref = claim['references']
@@ -47,18 +47,18 @@ def set_refernces_on_new(claim, references: Dict['Property', Any]):
 class Property:
     ALL: Dict[str, 'Property'] = {}
 
-    def __init__(self, id, name, type, allow_multiple=False, allow_qualifiers=False, is_qualifier=False, ignore=False,
+    def __init__(self, pid, name, typ, allow_multiple=False, allow_qualifiers=False, is_qualifier=False, ignore=False,
                  merge_all=False):
         self.ignore = ignore
-        self.id = id
+        self.id = pid
         self.name = name
-        self.type = type
+        self.type = typ
         self.merge_all = merge_all
         self.allow_multiple = allow_multiple
         self.allow_qualifiers = allow_qualifiers
         self.is_qualifier = is_qualifier
-        self.is_item = type == 'wikibase-item'
-        self.is_monotext = type == 'monolingualtext'
+        self.is_item = typ == 'wikibase-item'
+        self.is_monotext = typ == 'monolingualtext'
         if self.is_item:
             self.dv_type = 'wikibase-entityid'
         elif self.is_monotext:
@@ -113,7 +113,8 @@ class Property:
                 break
 
     def set_claim_on_new(self, data, value: ClaimValue):
-        if 'claims' not in data: data['claims'] = {}
+        if 'claims' not in data:
+            data['claims'] = {}
         claims = data['claims']
         claim = {
             'mainsnak': self.create_snak(value.value),
@@ -155,8 +156,10 @@ class Property:
         raise ValueError('Unexpected item')
 
     def get_claim_value(self, item, allow_multiple=None, allow_qualifiers=None):
-        if allow_multiple is None: allow_multiple = self.allow_multiple
-        if allow_qualifiers is None: allow_qualifiers = self.allow_qualifiers
+        if allow_multiple is None:
+            allow_multiple = self.allow_multiple
+        if allow_qualifiers is None:
+            allow_qualifiers = self.allow_qualifiers
         if 'claims' in item and self.id in item.claims:
             claims = item.claims[self.id]
         elif self.id in item:
