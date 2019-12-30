@@ -1,12 +1,15 @@
-import dataclasses
-from typing import Dict, Union
+from __future__ import annotations
 
-from lexicator.PageToLexeme import PageToLexeme
-from lexicator.consts.common import MEANING_HEADERS
-from lexicator.wikicache.ContentStore import ContentStore
-from lexicator.wikicache.PageContent import PageContent
-from lexicator.wikicache.PageFilter import PageFilter
-from lexicator.wikicache.utils import LogConfig
+import dataclasses
+from typing import Dict, Union, TYPE_CHECKING
+
+from lexicator.consts import MEANING_HEADERS
+from lexicator.wikicache import PageFilter
+from .PageToLexeme import PageToLexeme
+from .languages import handled_types
+
+if TYPE_CHECKING:
+    from lexicator.wikicache import ContentStore, PageContent, LogConfig
 
 
 class PageToLexemsFilter(PageFilter):
@@ -16,9 +19,10 @@ class PageToLexemsFilter(PageFilter):
         self.lang_code = lang_code
         self.source = source
         self.resolvers = resolvers
-        self.handled_types = {'noun', 'adjective', 'participle'}
+        self.handled_types = handled_types[lang_code]
         self.meanings_headers = set((f"_{v}" for v in MEANING_HEADERS[lang_code]))
 
+    # noinspection PyUnusedLocal
     def process_page(self, page: PageContent, force: Union[bool, str]) -> Union[PageContent, None]:
         if not page.data:
             return None
@@ -39,8 +43,8 @@ class PageToLexemsFilter(PageFilter):
         results = []
         errors = []
         for section in sections:
-            parser = PageToLexeme(self.lang_code, page.title, section, self.resolvers)
             try:
+                parser = PageToLexeme(self.lang_code, page.title, section, self.resolvers)
                 results.append(parser.run())
             except ValueError as err:
                 errors.append(str(err))

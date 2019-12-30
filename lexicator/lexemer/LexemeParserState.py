@@ -1,78 +1,16 @@
 from __future__ import annotations
 
-from typing import List, TYPE_CHECKING
+from typing import Set, List, TYPE_CHECKING
 
-from lexicator.Properties import *
-from lexicator.consts.common import word_types, Q_LANGUAGE_CODES, Q_LANGUAGE_WIKTIONARIES, root_templates, \
-    template_to_type, Q_SOURCES
-from lexicator.consts.consts import re_file, word_types_IPA, Q_PART_OF_SPEECH, Q_FEATURES
-from lexicator.wikicache.utils import json_key
-from lexicator.processor.TemplateProcessor import TemplateProcessorBase
-from lexicator.processor.TemplateProcessorAdjective import Adjective, Participle
-from lexicator.processor.TemplateProcessorCommon import RuTranscription, RuTranscriptions, RuPreReformSpelling, RuHyphenation
-from lexicator.processor.TemplateProcessorNouns import Noun, UnknownNoun
-from lexicator.TemplateUtils import test_str
-from lexicator.consts.utils import remove_stress
+from lexicator.consts import Q_LANGUAGE_CODES, Q_LANGUAGE_WIKTIONARIES, root_templates, template_to_type, \
+    Q_SOURCES, Q_PART_OF_SPEECH, re_file, word_types_IPA, Q_FEATURES, remove_stress
+from lexicator.wikicache import json_key
+from .Properties import set_references_on_new, P_IMPORTED_FROM_WM, set_qualifiers_on_new, \
+    P_DESCRIBED_BY, P_PRONUNCIATION, Property, ClaimValue, mono_value, P_WORD_STEM
+from .TemplateUtils import test_str
 
 if TYPE_CHECKING:
-    from lexicator.wikicache.ContentStore import ContentStore
-
-
-class PageToLexeme:
-    def __init__(self, lang_code, title, data_section, resolvers: Dict[str, ContentStore]) -> None:
-        self.lang_code = lang_code
-        self.title = title
-        self.data_section = data_section
-        self.resolvers = resolvers
-        self.word_type: str = None
-        self.grammar_types = set()
-
-    def run(self) -> Any:
-        self.word_type = self.calc_word_type()
-        one_lexeme = LexemeParserState(self, self.data_section)
-        if one_lexeme.grammar_type in self.grammar_types:
-            raise ValueError(f'More than one {one_lexeme.grammar_type} found')
-        self.grammar_types.add(one_lexeme.grammar_type)
-
-        result = one_lexeme.create_lexeme()
-
-        if not result:
-            raise ValueError('No lexemes found')
-        return result
-
-    def calc_word_type(self):
-        for word_type, regex in word_types.items():
-            if regex.match(self.title):
-                return word_type
-        raise ValueError('Unrecognized word type')
-
-    def validate_str(self, val, param):
-        if not word_types[self.word_type].match(test_str(val, param)):
-            raise ValueError(f'word {val} does not match the expected word type "{self.word_type}"')
-        return val
-
-
-known_headers = {
-    tuple(): 'root',
-    ('Морфологические и синтаксические свойства',): 'etymology',
-    ('Произношение',): 'pronunciation',
-    ('Семантические свойства',): 'semantic',
-    ('Семантические свойства', 'Значение',): 'semantic-meaning',
-    ('Семантические свойства', 'Синонимы',): 'semantic-synonyms',
-    ('Семантические свойства', 'Антонимы',): 'semantic-antonyms',
-    ('Семантические свойства', 'Гиперонимы',): 'semantic-hyperonyms',
-    ('Семантические свойства', 'Гипонимы',): 'semantic-hyponyms',
-    ('Родственные слова',): 'related',
-    ('Этимология',): 'etymology',
-    ('Фразеологизмы и устойчивые сочетания',): 'phrases',
-    ('Перевод',): 'translation',
-    ('Библиография',): 'bibliography',
-}
-
-
-def data_section_sorter(values):
-    header, template, params = values
-    return 0 if template not in templates else 1 if templates[template].is_primary else 2
+    from .PageToLexeme import PageToLexeme
 
 
 class LexemeParserState:
@@ -82,45 +20,42 @@ class LexemeParserState:
         self.data_section = data_section
         self.unhandled_params = {}
         self.form_by_param = {}
-        self.grammar_type: str = None
-        self.primary_form: str = None
-        self.result: dict = None
+        self.result = {}
         self.processed = False
+        self.__primary_form = None
 
         self.grammar_type = self.get_grammar_type()
         self.extras = {}
 
     @property
-    def primary_form(self):
+    def primary_form(self) -> str:
         if self.__primary_form is None:
             raise ValueError('primary_form was never set')
         return self.__primary_form
 
     @primary_form.setter
-    def primary_form(self, primary_form):
+    def primary_form(self, primary_form: str):
         self.__primary_form = primary_form
 
-    def create_lexeme(self):
+    def create_lexeme(self) -> dict:
         try:
             lex_category = Q_PART_OF_SPEECH[self.grammar_type]
         except KeyError:
             raise ValueError(f"Unhandled lexical category '{self.grammar_type}'")
 
-        self.result = dict(
-            lemmas={self.parent.lang_code: dict(language=self.parent.lang_code, value=self.title)},
-            lexicalCategory=lex_category,
-            language=Q_LANGUAGE_CODES[self.parent.lang_code],
-        )
+        self.result['lemmas'] = {self.parent.lang_code: dict(language=self.parent.lang_code, value=self.title)}
+        self.result['lexicalCategory'] = lex_category
+        self.result['language'] = Q_LANGUAGE_CODES[self.parent.lang_code]
 
         try:
             self.data_section = sorted(
-                [(known_headers[tuple(h[1:])], t, p) for h, t, p in self.data_section],
-                key=data_section_sorter)
+                [(self.parent.known_headers[tuple(h[1:])], t, p) for h, t, p in self.data_section],
+                key=self.data_section_sorter)
         except KeyError as err:
             raise ValueError(f"unknown section header {err} found")
 
         for header, template, params in self.data_section:
-            if template not in templates or not templates[template].autorun:
+            if template not in self.parent.templates or not self.parent.templates[template].autorun:
                 self.unhandled_params.update(params)
             else:
                 self.run_template(template, params)
@@ -139,8 +74,8 @@ class LexemeParserState:
                 for claim in props:
                     set_references_on_new(claim, {P_IMPORTED_FROM_WM: Q_LANGUAGE_WIKTIONARIES[self.parent.lang_code]})
 
-    def get_grammar_type(self):
-        grammar_type: Set = None
+    def get_grammar_type(self) -> str:
+        grammar_type: Set = set()
 
         def add_types(typ):
             if typ:
@@ -154,9 +89,9 @@ class LexemeParserState:
             if template in root_templates['ru']:
                 add_types(root_templates['ru'][template])
             else:
-                for rx, typ in template_to_type['ru']:
+                for rx, tp in template_to_type['ru']:
                     if rx.match(template):
-                        add_types(typ)
+                        add_types(tp)
         if not grammar_type:
             raise ValueError(f"Unknown grammar type:\n{self.data_section}")
         if len(grammar_type) > 1:
@@ -267,22 +202,15 @@ class LexemeParserState:
         return words
 
     def run_template(self, template, params):
-        templates[template].process(self, params)
+        self.parent.templates[template].process(self, params)
 
     def add_stem(self):
         if 'основа' in self.unhandled_params:
             P_WORD_STEM.set_claim_on_new(self.result, ClaimValue(
                 mono_value('ru', self.validate_str(remove_stress(self.unhandled_params['основа']), 'основа'))))
 
-
-templates: Dict[str, TemplateProcessorBase] = {k: v(k) for k, v in {
-    'transcription-ru': RuTranscription,
-    'transcriptions-ru': RuTranscriptions,
-    'inflection сущ ru': Noun,
-    'сущ-ru': Noun,
-    'сущ ru': UnknownNoun,
-    'прил': Adjective,
-    'по-слогам': RuHyphenation,
-    '_дореф': RuPreReformSpelling,
-    '_прич ru': Participle,
-}.items()}
+    def data_section_sorter(self, values):
+        header, template, params = values
+        if template not in self.parent.templates:
+            return 0
+        return 1 if self.parent.templates[template].is_primary else 2

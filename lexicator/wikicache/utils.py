@@ -47,6 +47,7 @@ class LogConfig:
 
 
 class MwSite(Site):
-    def __init__(self, url, use_bot_limits: bool, *args, **kwargs):
+    def __init__(self, url, lang_code: str, use_bot_limits: bool, *args, **kwargs):
         super().__init__(url, *args, **kwargs)
+        self.lang_code = lang_code
         self.use_bot_limits = use_bot_limits

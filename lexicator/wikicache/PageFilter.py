@@ -3,8 +3,8 @@ from abc import abstractmethod
 from datetime import datetime
 from typing import Iterable, Callable, Dict, Tuple, Union
 
-from lexicator.wikicache.PageRetriever import PageRetriever
-from lexicator.wikicache.PageContent import PageContent
+from .PageContent import PageContent
+from .PageRetriever import PageRetriever
 
 
 def update_content(page, data, content=None):
@@ -51,7 +51,7 @@ class PageFilter(PageRetriever):
                 progress_reporter(page.title)
 
     @abstractmethod
-    def process_page(self, page: PageContent, force: Union[bool, str]) -> PageContent:
+    def process_page(self, page: PageContent, force: Union[bool, str]) -> Union[PageContent, None]:
         pass
 
     def refresh_source(self, progress, reporter):

@@ -2,9 +2,9 @@ import dataclasses
 from abc import ABC, abstractmethod
 from typing import List, Callable, Union
 
-from lexicator.Properties import Property, ClaimValue
-from lexicator.TemplateUtils import normalize
-from lexicator.consts.common import root_templates
+from lexicator.consts import root_templates
+from .Properties import Property, ClaimValue
+from .TemplateUtils import normalize
 
 
 class TemplateProcessorBase(ABC):
@@ -105,6 +105,7 @@ class TemplateProcessor(TemplateProcessorBase, ABC):
                 claim_val = ClaimValue(val)
             prop.set_claim_on_new(parser.result, claim_val)
 
+    # noinspection PyMethodMayBeStatic
     def param_to_form(self, parser, param, param_getter, features) -> None:
         parser.create_form(param, param_getter(param), features)
 

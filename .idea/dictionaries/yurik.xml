@@ -8,8 +8,11 @@
       <w>datavalue</w>
       <w>emplate</w>
       <w>entityid</w>
+      <w>hyperonyms</w>
+      <w>hyponyms</w>
       <w>imperfective</w>
       <w>includeonly</w>
+      <w>infobox</w>
       <w>jsonl</w>
       <w>lexems</w>
       <w>lexicator</w>
@@ -33,15 +36,20 @@
       <w>snak</w>
       <w>snaks</w>
       <w>snaktype</w>
+      <w>stressable</w>
       <w>stressless</w>
       <w>tablename</w>
       <w>tantum</w>
       <w>transcludedin</w>
+      <w>utcnow</w>
+      <w>wbeditentity</w>
       <w>wdqs</w>
       <w>wikibase</w>
       <w>wikipage</w>
       <w>wikitext</w>
+      <w>wikt</w>
       <w>wiktionaries</w>
+      <w>zaliznyak</w>
     </words>
   </dictionary>
 </component>

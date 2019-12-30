@@ -4,11 +4,11 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Iterable, Tuple, Union, Callable, Dict, TYPE_CHECKING
 
-from lexicator.wikicache.PageContent import PageContent
-from lexicator.wikicache.utils import LogConfig
+from .PageContent import PageContent
+from .utils import LogConfig
 
 if TYPE_CHECKING:
-    from lexicator.wikicache.ContentStore import ContentStore
+    from .ContentStore import ContentStore
 
 
 class PageRetriever(ABC):

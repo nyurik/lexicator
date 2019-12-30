@@ -1,12 +1,11 @@
-from lexicator.Properties import *
-from lexicator.consts.consts import Q_FEATURES
+from lexicator.consts import Q_FEATURES
 from lexicator.consts.ru import Q_ZAL_NOUN_CLASSES
-from lexicator.processor.TemplateProcessor import TemplateProcessor
-from lexicator.TemplateUtils import validate_zaliznyak1, validate_asterisk, plurale_tantum, singularia_tantum, \
-    get_bool_param, normalize_zal
+from lexicator.lexemer import TemplateProcessor, validate_zaliznyak1, validate_asterisk, plurale_tantum, \
+    singularia_tantum, get_bool_param, normalize_zal
+from lexicator.lexemer.Properties import *
 
 
-class Noun(TemplateProcessor):
+class RuNoun(TemplateProcessor):
     # these params exist in both {{inflection сущ ru}} and {{inflection/ru/noun}}
     common_params = [
         'acc-pl', 'acc-pl2', 'acc-sg', 'acc-sg2', 'case', 'dat-pl', 'dat-pl2', 'dat-sg', 'dat-sg2', 'form', 'gen-pl',
@@ -17,6 +16,7 @@ class Noun(TemplateProcessor):
     ]
 
     # these params are only in {{inflection/ru/noun}}, append them to common
+    # noinspection SpellCheckingInspection
     params2 = common_params + [
         'acc-sg-f', 'dat-sg-f', 'gen-sg-f', 'ins-sg-f', 'nom-sg-f', 'obelus', 'prp-sg-f', 'зализняк-1', 'зализняк-2',
         'фам',
@@ -146,7 +146,7 @@ class Noun(TemplateProcessor):
             parser.create_form(second_form_key, second_val, features)
 
 
-class UnknownNoun(TemplateProcessor):
+class RuUnknownNoun(TemplateProcessor):
     def __init__(self, template: str) -> None:
         super().__init__(template, ['2'], is_primary=True)
 

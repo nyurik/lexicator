@@ -1,9 +1,12 @@
+from __future__ import annotations
+
+from collections import defaultdict
+
 from mwparserfromhell import parse as mw_parse
 from mwparserfromhell.nodes import Template, Text, Tag, Wikilink, Heading, HTMLEntity, Comment, ExternalLink
 
-from lexicator.utils import list_to_dict_of_lists
-from lexicator.wikicache import ContentStore
-from lexicator.wikicache.utils import MwSite, LogConfig, to_json
+from lexicator.consts import NS_TEMPLATE_NAME, lower_first_letter
+from lexicator.wikicache import ContentStore, MwSite, LogConfig, to_json
 
 IGNORE_TYPES = {Text, Tag, Wikilink, Comment, ExternalLink, HTMLEntity}
 LEX_TEMPLATE = 'Лексема в Викиданных'
@@ -23,6 +26,10 @@ class UpdateWiktionaryWithLexemeId:
         self.wiki_words = wiki_words
         self.existing_lexemes = existing_lexemes
         self.site = wiktionary
+        self.lang_code = wiktionary.lang_code
+
+        self.template_ns = NS_TEMPLATE_NAME[self.lang_code]
+        self.template_ns_lc = lower_first_letter(self.template_ns)
 
     def run(self):
         self.wiki_words.refresh()
@@ -74,8 +81,8 @@ class UpdateWiktionaryWithLexemeId:
                 continue
             elif typ == Template:
                 name = str(arg.name).strip()
-                if name.startswith('Шаблон:') or name.startswith('шаблон:'):
-                    name = name[len('шаблон:'):]
+                if name.startswith(self.template_ns) or name.startswith(self.template_ns_lc):
+                    name = name[len(self.template_ns):]
                 if name == LEX_TEMPLATE and (inside_meaning or 0) == lexeme_idx:
                     page_lex_id = str(arg.get(1)).strip()
                     if page_lex_id == lexeme_id:
@@ -132,4 +139,15 @@ class UpdateWiktionaryWithLexemeId:
             if result.edit.result != 'Success':
                 raise ValueError(result)
             else:
-                print(f'ru.wiktionary {word}: {summary}')
+                print(f'{self.lang_code}.wiktionary {word}: {summary}')
+
+
+def list_to_dict_of_lists(items, key, item_extractor=None):
+    result = defaultdict(list)
+    for item in items:
+        k = key(item)
+        if k is not None:
+            if item_extractor:
+                item = item_extractor(item)
+            result[k].append(item)
+    return result

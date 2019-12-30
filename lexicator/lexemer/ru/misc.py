@@ -1,10 +1,9 @@
 from typing import Callable
 
-from lexicator.Properties import *
+from lexicator.consts import remove_stress
 from lexicator.consts.ru import RUSSIAN_PRE_REFORM_ID
-from lexicator.processor.TemplateProcessor import TemplateProcessor, TemplateProcessorBase
-from lexicator.TemplateUtils import test_str
-from lexicator.consts.utils import remove_stress
+from lexicator.lexemer import TemplateProcessor, TemplateProcessorBase, test_str
+from lexicator.lexemer.Properties import *
 
 
 def assert_lang(param_getter, expects_lang):
@@ -17,6 +16,7 @@ class RuTranscription(TemplateProcessor):
     def __init__(self, template: str) -> None:
         super().__init__(template, ['1', '2', 'lang', 'источник', 'норма'])
 
+    # noinspection PyUnusedLocal
     def run(self, parser, param_getter: Callable[[str], str], params: dict):
         assert_lang(param_getter, 'ru')
         index = self.get_index(parser)
@@ -34,6 +34,7 @@ class RuTranscriptions(TemplateProcessor):
     def __init__(self, template: str) -> None:
         super().__init__(template, ['1', '2', '3', '4', 'мн2', 'lang', 'источник', 'норма'])
 
+    # noinspection PyUnusedLocal
     def run(self, parser, param_getter: Callable[[str], str], params: dict):
         assert_lang(param_getter, 'ru')
         index = self.get_index(parser)
@@ -69,6 +70,7 @@ class RuHyphenation(TemplateProcessorBase):
                     print(f'{parser.title}: unexpected non-breaking syllable position {idx} in {parts}')
                 merge_next = True
             else:
+                # FIXME: is this the right spelling, or should it be "hyphenation" ?
                 part = parser.validate_str(part, 'hypenation')
                 if merge_next:
                     new_parts[-1] += part

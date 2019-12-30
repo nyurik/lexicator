@@ -1,13 +1,14 @@
+from __future__ import annotations
+
 import json
 import traceback
 from typing import Set
 
 from time import sleep
 
-from lexicator.wikicache.ContentStore import ContentStore
-from lexicator.consts.consts import Q_PART_OF_SPEECH
-from lexicator.UpdateWiktionaryWithLexemeId import UpdateWiktionaryWithLexemeId
-from lexicator.wikicache.utils import to_json
+from lexicator.consts import Q_PART_OF_SPEECH
+from lexicator.wikicache import ContentStore, to_json, MwSite
+from .UpdateWiktionaryWithLexemeId import UpdateWiktionaryWithLexemeId
 
 presets = {
 }
@@ -21,9 +22,10 @@ allowed_types = {Q_PART_OF_SPEECH[t] for t in [
 
 
 class WikidataUploader:
-    def __init__(self, site, desired_lexemes: ContentStore, existing_lexemes: ContentStore,
+    def __init__(self, site: MwSite, desired_lexemes: ContentStore, existing_lexemes: ContentStore,
                  wiktionary_updater: UpdateWiktionaryWithLexemeId) -> None:
         self.site = site
+        self.lang_code = site.lang_code
         self.desired_lexemes = desired_lexemes
         self.existing_lexemes = existing_lexemes
         self.wiktionary_updater = wiktionary_updater
@@ -81,12 +83,14 @@ class WikidataUploader:
             self._run_one_lexeme(word, page, lexeme_idx, lexeme_data)
 
     def _run_one_lexeme(self, word, page, lexeme_idx, lexeme_data):
-        if word != lexeme_data['lemmas']['ru']['value']:
-            raise ValueError(f"Unable to create word {word} - lexeme is for {lexeme_data['lemmas']['ru']['value']}")
+        if word != lexeme_data['lemmas'][self.lang_code]['value']:
+            raise ValueError(f"Unable to create {self.lang_code} word {word} - lexeme "
+                             f"is for {lexeme_data['lemmas'][self.lang_code]['value']}")
         print(f"Creating {word} {f'#{lexeme_idx}' if lexeme_idx > 0 else ''}")
         lex_id = self.edit_entity(
             lexeme_data,
-            f'Importing from ru.wiktionary [[wikt:ru:{page.title}|{page.title}]] using [[User:Yurik/Lexicator|Lexicator]]',
+            f'Importing from {self.lang_code}.wiktionary [[wikt:{self.lang_code}:{page.title}|{page.title}]] '
+            f'using [[User:Yurik/Lexicator|Lexicator]]',
             None)
         if lex_id:
             if lex_id in pause_before:
@@ -105,7 +109,7 @@ class WikidataUploader:
     # def compare(self, old, new, *path):
 
     def update(self, old: dict, lexeme):
-        # self.edit_entity(lexeme, 'Updating from ru.wiktionary (manual pre-approval runs)')
+        # self.edit_entity(lexeme, f'Updating from {self.lang_code}.wiktionary (manual pre-approval runs)')
         pass
 
     def edit_entity(self, data, summary, qid):

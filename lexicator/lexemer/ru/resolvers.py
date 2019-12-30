@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from lexicator.wikicache.ResolverViaMwParse import ResolverViaMwParse
-from lexicator.wikicache.utils import LogConfig, MwSite
+from lexicator.wikicache import ResolverViaMwParse, LogConfig, MwSite
 
 if TYPE_CHECKING:
-    from lexicator.wikicache.ContentStore import ContentStore
+    from lexicator.wikicache import ContentStore
 
 
-class ResolveNounRu(ResolverViaMwParse):
+class ResolveRuNoun(ResolverViaMwParse):
     def __init__(self, log_config: LogConfig, site: MwSite, template_source: ContentStore):
+        # noinspection SpellCheckingInspection
         super().__init__(
             site, template_source, log_config=log_config, batch_size=150, template_name='сущ-ru',
             internal_template='inflection/ru/noun', ignore_params=['слоги'],
@@ -23,7 +23,7 @@ class ResolveNounRu(ResolverViaMwParse):
                            'скл', 'слоги', 'Сч', 'фам', 'чередование', 'шаблон-кат'])
 
 
-class ResolveTranscriptionRu(ResolverViaMwParse):
+class ResolveRuTranscription(ResolverViaMwParse):
     def __init__(self, log_config: LogConfig, site: MwSite, template_source: ContentStore):
         super().__init__(
             site, template_source, log_config=log_config, batch_size=1000,
@@ -31,7 +31,7 @@ class ResolveTranscriptionRu(ResolverViaMwParse):
             output_params=['1', '2', 'lang', 'источник', 'норма'])
 
 
-class ResolveTranscriptionsRu(ResolverViaMwParse):
+class ResolveRuTranscriptions(ResolverViaMwParse):
     def __init__(self, log_config: LogConfig, site: MwSite, template_source: ContentStore):
         super().__init__(
             site, template_source, log_config=log_config, batch_size=500,

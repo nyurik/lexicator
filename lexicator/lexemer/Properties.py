@@ -3,6 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, Set, Union, Any
 
+__all__ = ["mono_value", "ClaimValue", "set_qualifiers_on_new", "set_references_on_new", "Property",
+           "P_HAS_QUALITY", "P_GRAMMATICAL_GENDER", "P_INFLECTION_CLASS", "P_WORD_STEM", "P_WORD_ROOT",
+           "P_PRONUNCIATION", "P_IPA_TRANSCRIPTION", "P_PRONUNCIATION_AUDIO", "P_HYPHENATION", "P_DESCRIBED_BY",
+           "P_IMPORTED_FROM_WM", ]
+
 
 def mono_value(lang, text):
     return {'text': text, 'language': lang}
@@ -11,7 +16,7 @@ def mono_value(lang, text):
 @dataclass
 class ClaimValue:
     value: Union[str, Dict]
-    qualifiers: Dict['Property', Set[str]] = field(default_factory=dict)
+    qualifiers: Dict[Property, Set[str]] = field(default_factory=dict)
     rank: str = 'normal'
 
     def __post_init__(self):
@@ -19,7 +24,7 @@ class ClaimValue:
             raise ValueError('Claim value cannot be empty')
 
 
-def set_qualifiers_on_new(claim, qualifiers: Dict['Property', Any]):
+def set_qualifiers_on_new(claim, qualifiers: Dict[Property, Any]):
     if qualifiers and len(qualifiers) > 0:
         try:
             q = claim['qualifiers']
@@ -32,7 +37,7 @@ def set_qualifiers_on_new(claim, qualifiers: Dict['Property', Any]):
             q[p.id] = [p.create_snak(v) for v in vals]
 
 
-def set_references_on_new(claim, references: Dict['Property', Any]):
+def set_references_on_new(claim, references: Dict[Property, Any]):
     if references and len(references) > 0:
         try:
             ref = claim['references']
@@ -47,7 +52,7 @@ def set_references_on_new(claim, references: Dict['Property', Any]):
 
 
 class Property:
-    ALL: Dict[str, 'Property'] = {}
+    ALL: Dict[str, Property] = {}
 
     def __init__(self, pid, name, typ, allow_multiple=False, allow_qualifiers=False, is_qualifier=False, ignore=False,
                  merge_all=False):

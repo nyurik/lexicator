@@ -1,13 +1,13 @@
 import re
 
-from lexicator.Properties import P_INFLECTION_CLASS, P_HAS_QUALITY
-from lexicator.consts.consts import Q_FEATURES
+from lexicator.consts import Q_FEATURES
 from lexicator.consts.ru import Q_ZAL_ADJ_CLASSES
-from lexicator.processor.TemplateProcessor import TemplateProcessor
-from lexicator.TemplateUtils import normalize_zal
+from lexicator.lexemer import TemplateProcessor, normalize_zal
+from lexicator.lexemer.Properties import P_INFLECTION_CLASS, P_HAS_QUALITY
 
 
 def validate_flag(params_to_check, enable=False):
+    # noinspection PyUnusedLocal
     def validate(processor, parser, value, param, param_getter, params):
         for param in params_to_check:
             val = param_getter(param, False)
@@ -20,7 +20,7 @@ def validate_flag(params_to_check, enable=False):
     return validate
 
 
-class Adjective(TemplateProcessor):
+class RuAdjective(TemplateProcessor):
     def __init__(self, template: str) -> None:
         super().__init__(template, [
             'acc-pl-a', 'acc-pl-n', 'acc-sg-f', 'acc-sg-m-a', 'acc-sg-m-n', 'acc-sg-n', 'anim', 'dat-pl', 'dat-sg-f',
@@ -121,15 +121,16 @@ class Adjective(TemplateProcessor):
     def param_to_form(self, parser, param, param_getter, features) -> None:
         param_value = param_getter(param)
         if param != 'ins-sg-f' or ' ' not in param_value:
-            return super(Adjective, self).param_to_form(parser, param, param_getter, features)
+            return super(RuAdjective, self).param_to_form(parser, param, param_getter, features)
 
         words = parser.split_words(param_value, 2)
         parser.create_form(param, words[0], features)
         parser.create_form(param + '2', words[1], features)
 
 
-class Participle(TemplateProcessor):
+class RuParticiple(TemplateProcessor):
     def __init__(self, template: str) -> None:
+        # noinspection SpellCheckingInspection
         super().__init__(
             template,
             ['hide-text', 'nocat', 'вид', 'время', 'дореф', 'залог', 'коммент', 'склонение', 'склонение', 'слоги',

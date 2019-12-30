@@ -1,12 +1,7 @@
 import re
 from typing import Callable, Union
 
-from lexicator.Properties import mono_value, P_HAS_QUALITY, ClaimValue
-
-
-def ru_mono(v):
-    return mono_value('ru', v)
-
+from .Properties import P_HAS_QUALITY, ClaimValue
 
 re_valid_str = re.compile(r'^[^\'<>]+$')
 
@@ -25,6 +20,7 @@ def normalize(value, normalizations):
     return value
 
 
+# noinspection PyUnusedLocal
 def validate_zaliznyak1(processor, parser, value, param, param_getter, params):
     val = param_getter('зализняк')
     if not val:
@@ -33,6 +29,7 @@ def validate_zaliznyak1(processor, parser, value, param, param_getter, params):
         raise ValueError(f'зализняк={val} and {param}={value} is not yet supported')
 
 
+# noinspection PyUnusedLocal
 def validate_asterisk(processor, parser, value, param, param_getter, params):
     expects = value == '1'
     z_val = param_getter('зализняк', False)
@@ -43,10 +40,12 @@ def validate_asterisk(processor, parser, value, param, param_getter, params):
             f'Value зализняк={z_val} is {"not " if expects else ""}expected to have a "*" when {param}={value}')
 
 
+# noinspection PyUnusedLocal
 def plurale_tantum(processor, parser, value, param, param_getter, params):
     P_HAS_QUALITY.set_claim_on_new(parser.result, ClaimValue('Q138246'))
 
 
+# noinspection PyUnusedLocal
 def singularia_tantum(processor, parser, value, param, param_getter, params):
     P_HAS_QUALITY.set_claim_on_new(parser.result, ClaimValue('Q604984'))
 

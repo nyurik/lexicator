@@ -1,53 +1,49 @@
 from pathlib import Path
 
-from lexicator.RuTemplateDownloader import TemplateDownloaderRu
-from lexicator.parser.PageParser import PageParser
-from lexicator.PageToLexemsFilter import PageToLexemsFilter
-from lexicator.ResolverViaMwParse import ResolveNounRu, ResolveTranscriptionsRu, ResolveTranscriptionRu
-from lexicator.UpdateWiktionaryWithLexemeId import UpdateWiktionaryWithLexemeId
-from lexicator.WikidataUploader import WikidataUploader
+from lexicator.lexemer import PageToLexemsFilter
+from lexicator.lexemer.ru import ResolveRuNoun, ResolveRuTranscriptions, ResolveRuTranscription
+from lexicator.parser import PageParser
+from lexicator.uploader import UpdateWiktionaryWithLexemeId, WikidataUploader
 from lexicator.utils import Config
-from lexicator.wikicache.ContentStore import ContentStore
-from lexicator.wikicache.LexemeDownloader import LexemeDownloader
-from lexicator.wikicache.WiktionaryWordDownloader import WiktionaryWordDownloader
+from lexicator.wikicache import ContentStore, LexemeDownloader, TemplateDownloader, WiktionaryWordDownloader
 
 
 class Storage:
     def __init__(self, config: Config):
-        path = Path("_cache", config.lang_code)
+        path = Path("_cache", config.wiktionary.lang_code)
         path.mkdir(exist_ok=True, parents=True)
 
         log_config = config
         self.wiki_templates = ContentStore(
             path / 'wiktionary-raw-templates.db',
-            TemplateDownloaderRu(config.wiktionary, log_config))
+            TemplateDownloader(config.wiktionary, log_config=log_config))
         self.wiki_words = ContentStore(
             path / 'wiktionary-raw-words.db',
             WiktionaryWordDownloader(config.wiktionary, log_config))
         self.existing_lexemes = ContentStore(
             path / 'wikidata-raw-lexemes.db',
-            LexemeDownloader(config.wikidata, config.wdqs, config.lang_code, log_config))
+            LexemeDownloader(config.wikidata, config.wdqs, config.wiktionary.lang_code, log_config))
 
         self.parsed_wiki_words = ContentStore(
             path / 'parsed.wiktionary.db',
-            PageParser(config.lang_code, self.wiki_words, self.wiki_templates, log_config))
+            PageParser(config.wiktionary.lang_code, self.wiki_words, self.wiki_templates, log_config))
 
         self.resolve_noun_ru = ContentStore(
             path / 'resolve_noun.db',
-            ResolveNounRu(log_config, config.wiktionary, self.parsed_wiki_words))
+            ResolveRuNoun(log_config, config.wiktionary, self.parsed_wiki_words))
 
         self.resolve_transcription_ru = ContentStore(
             path / 'resolve_transcription.db',
-            ResolveTranscriptionRu(log_config, config.wiktionary, self.parsed_wiki_words))
+            ResolveRuTranscription(log_config, config.wiktionary, self.parsed_wiki_words))
 
         self.resolve_transcriptions_ru = ContentStore(
             path / 'resolve_transcriptions.db',
-            ResolveTranscriptionsRu(log_config, config.wiktionary, self.parsed_wiki_words))
+            ResolveRuTranscriptions(log_config, config.wiktionary, self.parsed_wiki_words))
 
         self.desired_lexemes = ContentStore(
             path / 'expected_lexemes.db',
             PageToLexemsFilter(
-                log_config, config.lang_code, self.parsed_wiki_words,
+                log_config, config.wiktionary.lang_code, self.parsed_wiki_words,
                 {v.retriever.template_name: v for v in (
                     self.resolve_noun_ru,
                     self.resolve_transcription_ru,

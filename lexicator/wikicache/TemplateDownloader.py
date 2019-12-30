@@ -3,10 +3,10 @@ import re
 from html import unescape
 from typing import Callable, Union
 
-from lexicator.wikicache.PageContent import PageContent
-from lexicator.wikicache.WikipageDownloader import WikipageDownloader
-from lexicator.consts.consts import NS_TEMPLATE
-from lexicator.wikicache.utils import LogConfig, MwSite
+from lexicator.consts import NS_TEMPLATE
+from .PageContent import PageContent
+from .WikipageDownloader import WikipageDownloader
+from .utils import LogConfig, MwSite
 
 
 class TemplateDownloader(WikipageDownloader):

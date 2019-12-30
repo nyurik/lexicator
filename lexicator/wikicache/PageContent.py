@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from lexicator.wikicache.utils import clean_empty_vals
+from .utils import clean_empty_vals
 
 
 @dataclass(frozen=True)

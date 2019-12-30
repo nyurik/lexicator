@@ -6,7 +6,11 @@ STRESS_SYMBOL_PRI = '\u0301'
 STRESS_SYMBOL_SEC = '\u0300'
 
 # From http://www.internationalphoneticalphabet.org/ipa-charts/ipa-symbols-with-unicode-decimal-and-hex-codes/
-IPA_SYMBOLS = '‿⁽⁾()abcdefghijklmnopqrstuvwxyzɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞ɫ↓↑→↗↘\u0325\u030A\u0324\u032A\u032C\u0330\u033A\u033C\u033B\u031A\u0339\u0303\u031C\u031F\u0320\u0308\u0334\u033D\u031D\u0329\u031E\u032F\u0318\u0319\u0306\u030B\u0301\u0304\u0300\u030F\u035C\u0361'
+# noinspection SpellCheckingInspection
+IPA_SYMBOLS = '‿⁽⁾()abcdefghijklmnopqrstuvwxyzɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧ' \
+              'ʉʊʋⱱʌɣɤʍχʎʏʑʐʒʔʡʕʢǀǁǂǃˈˌːˑʼʴʰʱʲʷˠˤ˞ɫ↓↑→↗↘\u0325\u030A\u0324\u032A\u032C\u0330\u033A\u033C\u033B' \
+              '\u031A\u0339\u0303\u031C\u031F\u0320\u0308\u0334\u033D\u031D\u0329\u031E\u032F\u0318\u0319\u0306' \
+              '\u030B\u0301\u0304\u0300\u030F\u035C\u0361'
 
 word_types_IPA = {
     'letters only': re.compile(rf'^[{IPA_SYMBOLS}]+$'),
@@ -25,6 +29,8 @@ NS_LEXEME = 146
 # SELECT ?idLabel ?id WHERE {
 #   ?id wdt:P31 wd:Q82042.
 #   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+
+# noinspection SpellCheckingInspection
 Q_PART_OF_SPEECH = {
     'noun': 'Q1084',
     'common noun': 'Q2428747',

@@ -8,12 +8,12 @@ from typing import List, Iterable, Tuple, Union, Callable, Dict, TYPE_CHECKING
 from mwparserfromhell.nodes import Template
 from mwparserfromhell.nodes.extras import Parameter
 
-from lexicator.wikicache.PageContent import PageContent
-from lexicator.wikicache.PageRetriever import PageRetriever
-from lexicator.wikicache.utils import batches, json_key, LogConfig, MwSite
+from .PageContent import PageContent
+from .PageRetriever import PageRetriever
+from .utils import batches, json_key, LogConfig, MwSite
 
 if TYPE_CHECKING:
-    from lexicator.wikicache.ContentStore import ContentStore
+    from .ContentStore import ContentStore
 
 
 class ResolverViaMwParse(PageRetriever):
@@ -21,7 +21,7 @@ class ResolverViaMwParse(PageRetriever):
     In Wiktionary, there are many templates that simply convert parameters into parameters
     for some other template for printing. In Wikipedia, there could be many infobox templates,
     such as one for music and one for movies, but both call the basic "infobox" template
-    with some parameters.  This code allows one to get those internal "infbox" parameters.
+    with some parameters.  This code allows one to get those internal "infobox" parameters.
 
     For example, a {{сущ-ru|чайха́нщица|жо 5a}} ru.wiktionary template creates all noun
     forms for a russian noun "чайха́нщица", according to "жо 5a" ru-word classification.
@@ -47,7 +47,7 @@ class ResolverViaMwParse(PageRetriever):
         self.ignore_params = set(ignore_params)
         self.output_params = output_params
         # Convert each arg into wikitext  "* acc-pl={{{acc-pl|}}}"
-        self.internal_template = 'Шаблон:' + internal_template
+        self.internal_template = 'Template:' + internal_template
         self.template_sandbox_text = ''.join(
             ("{{#if:{{{" + v + "|}}}|\n* " + v + "={{{" + v + "|}}}}}" for v in output_params))
 
@@ -96,7 +96,7 @@ class ResolverViaMwParse(PageRetriever):
                 templatesandboxtext=self.template_sandbox_text,
             ).parse.text
 
-            result: PageContent = None
+            result: Union[PageContent, None] = None
             for k, v in self.re_params.findall(text):
                 if k == '_INDEX_':
                     if result:

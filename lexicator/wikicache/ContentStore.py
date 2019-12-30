@@ -9,9 +9,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from lexicator.wikicache.PageRetriever import PageRetriever
-from lexicator.wikicache.utils import batches, trim_timedelta
-from lexicator.wikicache.PageContent import PageContent
+from .PageContent import PageContent
+from .PageRetriever import PageRetriever
+from .utils import batches, trim_timedelta
 
 T = TypeVar('T')
 
@@ -252,7 +252,8 @@ class ContentStore:
 
         return source, delete
 
-    def get_stored_titles(self, db, obj_type, filters):
+    @staticmethod
+    def get_stored_titles(db, obj_type, filters):
         query = db.query(obj_type).filter(obj_type.timestamp is not None)
         if filters:
             query = query.filter(*filters)

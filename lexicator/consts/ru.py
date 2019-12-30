@@ -4,10 +4,13 @@ import unicodedata
 
 from lexicator.consts.consts import STRESS_SYMBOL_PRI, STRESS_SYMBOL_SEC
 
-RUSSIAN_STRESSABLE_LETTERS = 'аАеЕиИоОуУэЭюЮяЯ'
+RUSSIAN_PRE_REFORM_ID = 'ru-x-Q2442696'
+
 RUSSIAN_ALPHABET = 'аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ'
 RUSSIAN_ALPHABET_EXT = 'ѕЅіІѣѡѠѢѧѦѩѨѫѪѭѬѯѮѱѰѳѲѵѴ'
-RUSSIAN_ALHABET_STRESS = \
+
+RUSSIAN_STRESSABLE_LETTERS = 'аАеЕиИоОуУэЭюЮяЯ'
+RUSSIAN_ALPHABET_STRESS = \
     RUSSIAN_ALPHABET + STRESS_SYMBOL_PRI + STRESS_SYMBOL_SEC + unicodedata.normalize(
         'NFC',
         ''.join(((v + STRESS_SYMBOL_PRI + v + STRESS_SYMBOL_SEC) for v in RUSSIAN_STRESSABLE_LETTERS)))
@@ -128,6 +131,7 @@ ru_root_templates = {
     'падежи ru 1': 0, 'падежи ru m n f pl': 0, 'слоги': 0, 'лексема в Викиданных': 0,
 }
 
+# noinspection SpellCheckingInspection
 ru_re_template_names = re.compile(
     r'^(([tT]emplate|[шШ]аблон):)?' + r'('
                                       r'([iI]nflection )?[сС]ущ[- _]+ru([ +]?$|[ +][^/\n]*(//)?[^/\n]*$)'
@@ -337,4 +341,3 @@ Q_ZAL_NOUN_CLASSES = {
 # LAST	P1552	Q66605819
 # LAST	P1552	Q66459699
 # LAST	P1552	Q66624434
-RUSSIAN_PRE_REFORM_ID = 'ru-x-Q2442696'

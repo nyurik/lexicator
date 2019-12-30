@@ -3,9 +3,9 @@ from typing import Callable, Iterable, Tuple, Dict, Union
 
 from pywikiapi import to_datetime
 
-from lexicator.wikicache.PageContent import PageContent
-from lexicator.wikicache.PageRetriever import PageRetriever
-from lexicator.wikicache.utils import trim_timedelta, batches, to_json, LogConfig, MwSite
+from .PageContent import PageContent
+from .PageRetriever import PageRetriever
+from .utils import trim_timedelta, batches, to_json, LogConfig, MwSite
 
 
 class WikipageDownloader(PageRetriever):
