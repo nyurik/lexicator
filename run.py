@@ -1,8 +1,8 @@
 from pathlib import Path
 
+from lexicator.Storage import Storage
 from lexicator.utils import Config, get_site
 from lexicator.wikicache import WikidataQueryService
-from lexicator.Storage import Storage
 
 config = Config(
     wiktionary=get_site('ru.wiktionary.org', True),

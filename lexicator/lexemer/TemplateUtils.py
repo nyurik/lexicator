@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from typing import Callable, Union
 
@@ -32,12 +34,13 @@ def validate_zaliznyak1(processor, parser, value, param, param_getter, params):
 # noinspection PyUnusedLocal
 def validate_asterisk(processor, parser, value, param, param_getter, params):
     expects = value == '1'
-    z_val = param_getter('зализняк', False)
+    z_param = 'зализняк'
+    z_val = param_getter(z_param, False)
     if not z_val:
-        raise ValueError(f'Param "зализняк" is not set and {param}={value}')
+        raise ValueError(f'Param "{z_param}" is not set and {param}={value}')
     if ('*' not in z_val) == expects:
         raise ValueError(
-            f'Value зализняк={z_val} is {"not " if expects else ""}expected to have a "*" when {param}={value}')
+            f'Value {z_param}={z_val} is {"not " if expects else ""}expected to have a "*" when {param}={value}')
 
 
 # noinspection PyUnusedLocal

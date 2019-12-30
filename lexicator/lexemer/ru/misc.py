@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from typing import Callable
 
-from lexicator.consts import remove_stress
-from lexicator.consts.ru import RUSSIAN_PRE_REFORM_ID
-from lexicator.lexemer import TemplateProcessor, TemplateProcessorBase, test_str
-from lexicator.lexemer.Properties import *
+from lexicator.consts.ru import RUSSIAN_PRE_REFORM_ID, remove_stress
+from ..Properties import *
+from ..TemplateProcessor import TemplateProcessor, TemplateProcessorBase
+from ..TemplateUtils import test_str
 
 
 def assert_lang(param_getter, expects_lang):

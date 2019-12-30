@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from typing import Dict, Type, Set, TYPE_CHECKING
+from typing import Dict, Type, Set
 
-from .ru import RuTranscription, RuTranscriptions, RuNoun, RuUnknownNoun, RuAdjective, RuHyphenation, \
-    RuPreReformSpelling, RuParticiple
-
-if TYPE_CHECKING:
-    from .TemplateProcessor import TemplateProcessorBase
+from .TemplateProcessor import TemplateProcessorBase
+from .ru import *
 
 
 def instantiate(items: Dict[str, Type]) -> Dict[str, TemplateProcessorBase]:

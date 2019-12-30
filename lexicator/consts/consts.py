@@ -2,9 +2,6 @@ import re
 
 re_file = re.compile(r'^[^<>]+\.(ogg|wav|mp3)$')
 
-STRESS_SYMBOL_PRI = '\u0301'
-STRESS_SYMBOL_SEC = '\u0300'
-
 # From http://www.internationalphoneticalphabet.org/ipa-charts/ipa-symbols-with-unicode-decimal-and-hex-codes/
 # noinspection SpellCheckingInspection
 IPA_SYMBOLS = '‿⁽⁾()abcdefghijklmnopqrstuvwxyzɑɐɒæɓʙβɔɕçɗɖðʤəɘɚɛɜɝɞɟʄɡɠɢʛɦɧħɥʜɨɪʝɭɬɫɮʟɱɯɰŋɳɲɴøɵɸθœɶʘɹɺɾɻʀʁɽʂʃʈʧ' \

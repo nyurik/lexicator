@@ -7,9 +7,9 @@ from mwparserfromhell.nodes import Template, Text, Wikilink, Comment, Heading, A
 from mwparserfromhell.nodes.extras import Parameter
 
 from lexicator.consts import ignore_pages_if_template, MEANING_HEADERS
-from .PageParser import ignore_types, re_well_known_parameters, re_allowed_extras, params_to_dict, \
-    custom_templates, expand_template
 from .ParserState import ParserState
+from .misc import ignore_types, re_well_known_parameters, re_allowed_extras, params_to_dict, \
+    custom_templates, expand_template
 
 
 class TemplateParser:

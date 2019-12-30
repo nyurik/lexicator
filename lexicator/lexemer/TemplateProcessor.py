@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 from abc import ABC, abstractmethod
 from typing import List, Callable, Union
@@ -105,7 +107,6 @@ class TemplateProcessor(TemplateProcessorBase, ABC):
                 claim_val = ClaimValue(val)
             prop.set_claim_on_new(parser.result, claim_val)
 
-    # noinspection PyMethodMayBeStatic
     def param_to_form(self, parser, param, param_getter, features) -> None:
         parser.create_form(param, param_getter(param), features)
 

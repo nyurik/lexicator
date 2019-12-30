@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Any
+from typing import Dict, Any
 
 from lexicator.consts import word_types
+from lexicator.wikicache import ContentStore
 from .LexemeParserState import LexemeParserState
 from .TemplateUtils import test_str
 from .languages import templates, known_headers
-
-if TYPE_CHECKING:
-    from lexicator.wikicache import ContentStore
 
 
 class PageToLexeme:

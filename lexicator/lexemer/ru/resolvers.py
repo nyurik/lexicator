@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
+from lexicator.wikicache import ContentStore
 from lexicator.wikicache import ResolverViaMwParse, LogConfig, MwSite
-
-if TYPE_CHECKING:
-    from lexicator.wikicache import ContentStore
 
 
 class ResolveRuNoun(ResolverViaMwParse):

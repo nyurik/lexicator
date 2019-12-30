@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from html import unescape
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from lexicator.wikicache import PageContent
-from .PageParser import PageParser
+
+if TYPE_CHECKING:
+    from .PageParser import PageParser
 
 
 @dataclass

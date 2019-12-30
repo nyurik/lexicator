@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Set, List, TYPE_CHECKING
 
 from lexicator.consts import Q_LANGUAGE_CODES, Q_LANGUAGE_WIKTIONARIES, root_templates, template_to_type, \
-    Q_SOURCES, Q_PART_OF_SPEECH, re_file, word_types_IPA, Q_FEATURES, remove_stress
+    Q_SOURCES, Q_PART_OF_SPEECH, re_file, word_types_IPA, Q_FEATURES
+from lexicator.consts.ru import remove_stress
 from lexicator.wikicache import json_key
 from .Properties import set_references_on_new, P_IMPORTED_FROM_WM, set_qualifiers_on_new, \
     P_DESCRIBED_BY, P_PRONUNCIATION, Property, ClaimValue, mono_value, P_WORD_STEM

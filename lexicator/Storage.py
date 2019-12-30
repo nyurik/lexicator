@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from lexicator.lexemer import PageToLexemsFilter
-from lexicator.lexemer.ru import ResolveRuNoun, ResolveRuTranscriptions, ResolveRuTranscription
+from lexicator.lexemer.PageToLexemsFilter import PageToLexemsFilter
+from lexicator.lexemer.ru.resolvers import ResolveRuNoun, ResolveRuTranscription, ResolveRuTranscriptions
 from lexicator.parser import PageParser
 from lexicator.uploader import UpdateWiktionaryWithLexemeId, WikidataUploader
 from lexicator.utils import Config

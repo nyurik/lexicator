@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from lexicator.consts import Q_FEATURES
 from lexicator.consts.ru import Q_ZAL_NOUN_CLASSES
-from lexicator.lexemer import TemplateProcessor, validate_zaliznyak1, validate_asterisk, plurale_tantum, \
-    singularia_tantum, get_bool_param, normalize_zal
-from lexicator.lexemer.Properties import *
+from ..Properties import *
+from ..TemplateProcessor import TemplateProcessor
+from ..TemplateUtils import normalize_zal, validate_zaliznyak1, validate_asterisk, plurale_tantum, \
+    singularia_tantum, get_bool_param
 
 
 class RuNoun(TemplateProcessor):

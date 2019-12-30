@@ -2,9 +2,9 @@ import re
 
 import unicodedata
 
-from lexicator.consts.consts import STRESS_SYMBOL_PRI, STRESS_SYMBOL_SEC
-
 RUSSIAN_PRE_REFORM_ID = 'ru-x-Q2442696'
+STRESS_SYMBOL_PRI = '\u0301'
+STRESS_SYMBOL_SEC = '\u0300'
 
 RUSSIAN_ALPHABET = 'аАбБвВгГдДеЕёЁжЖзЗиИйЙкКлЛмМнНоОпПрРсСтТуУфФхХцЦчЧшШщЩъЪыЫьЬэЭюЮяЯ'
 RUSSIAN_ALPHABET_EXT = 'ѕЅіІѣѡѠѢѧѦѩѨѫѪѭѬѯѮѱѰѳѲѵѴ'
@@ -14,6 +14,12 @@ RUSSIAN_ALPHABET_STRESS = \
     RUSSIAN_ALPHABET + STRESS_SYMBOL_PRI + STRESS_SYMBOL_SEC + unicodedata.normalize(
         'NFC',
         ''.join(((v + STRESS_SYMBOL_PRI + v + STRESS_SYMBOL_SEC) for v in RUSSIAN_STRESSABLE_LETTERS)))
+
+
+def remove_stress(word: str) -> str:
+    return unicodedata.normalize(
+        'NFC', unicodedata.normalize('NFD', word).replace(STRESS_SYMBOL_PRI, '').replace(STRESS_SYMBOL_SEC, ''))
+
 
 # noinspection SpellCheckingInspection
 ru_ignore_templates = {

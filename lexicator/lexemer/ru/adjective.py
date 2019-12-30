@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import re
 
 from lexicator.consts import Q_FEATURES
 from lexicator.consts.ru import Q_ZAL_ADJ_CLASSES
-from lexicator.lexemer import TemplateProcessor, normalize_zal
-from lexicator.lexemer.Properties import P_INFLECTION_CLASS, P_HAS_QUALITY
+from ..Properties import P_INFLECTION_CLASS, P_HAS_QUALITY
+from ..TemplateProcessor import TemplateProcessor
+from ..TemplateUtils import normalize_zal
 
 
 def validate_flag(params_to_check, enable=False):

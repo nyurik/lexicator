@@ -4,8 +4,8 @@ from .noun import RuNoun, RuUnknownNoun
 from .resolvers import ResolveRuNoun, ResolveRuTranscription, ResolveRuTranscriptions
 
 __all__ = [
-    RuAdjective, RuParticiple,
-    RuTranscription, RuTranscriptions, RuHyphenation, RuPreReformSpelling,
-    RuNoun, RuUnknownNoun,
-    ResolveRuNoun, ResolveRuTranscription, ResolveRuTranscriptions,
+    "RuAdjective", "RuParticiple",
+    "RuTranscription", "RuTranscriptions", "RuHyphenation", "RuPreReformSpelling",
+    "RuNoun", "RuUnknownNoun",
+    "ResolveRuNoun", "ResolveRuTranscription", "ResolveRuTranscriptions",
 ]

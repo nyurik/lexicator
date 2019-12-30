@@ -1,8 +1,8 @@
 import re
 from typing import Dict, Pattern, List, Tuple, Set
 
-from lexicator.consts.ru import RUSSIAN_ALPHABET_STRESS, ru_ignore_templates, ru_root_templates, ru_re_template_names
-from lexicator.consts.utils import cleanup_root_templates, double_title_case
+from .ru import RUSSIAN_ALPHABET_STRESS, ru_ignore_templates, ru_root_templates, ru_re_template_names
+from .utils import cleanup_root_templates, double_title_case
 
 NS_TEMPLATE_NAME: Dict[str, str] = dict(
     ru='Шаблон:',

@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Dict, Union, TYPE_CHECKING
+from typing import Dict, Union
 
 from lexicator.consts import MEANING_HEADERS
-from lexicator.wikicache import PageFilter
+from lexicator.wikicache import ContentStore, PageContent, LogConfig, PageFilter
 from .PageToLexeme import PageToLexeme
 from .languages import handled_types
-
-if TYPE_CHECKING:
-    from lexicator.wikicache import ContentStore, PageContent, LogConfig
 
 
 class PageToLexemsFilter(PageFilter):
