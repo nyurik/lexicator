@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-from typing import Dict, Type, Set
+from typing import Dict, Type, Set, Callable
 
+from lexicator.wikicache import ContentStore, ResolverViaMwParse, LogConfig, MwSite
 from .TemplateProcessor import TemplateProcessorBase
 from .ru import *
 
 
-def instantiate(items: Dict[str, Type]) -> Dict[str, TemplateProcessorBase]:
-    return {k: v(k) for k, v in items.items()}
+def instantiate(lang_code: str, items: Dict[str, Type]) -> Dict[str, TemplateProcessorBase]:
+    return {k: v(lang_code, k) for k, v in items.items()}
 
 
 templates: Dict[str, Dict[str, TemplateProcessorBase]] = dict(
-    ru=instantiate({
+    ru=instantiate('ru', {
         'transcription-ru': RuTranscription,
         'transcriptions-ru': RuTranscriptions,
         'inflection сущ ru': RuNoun,
@@ -45,4 +46,8 @@ known_headers: Dict[str, Dict[tuple, str]] = dict(
 
 handled_types: Dict[str, Set[str]] = dict(
     ru={'noun', 'adjective', 'participle'},
+)
+
+resolver_classes: Dict[str, Set[Callable[[LogConfig, MwSite, ContentStore], ResolverViaMwParse]]] = dict(
+    ru={RuResolveNoun, RuResolveTranscription, RuResolveTranscriptions},
 )

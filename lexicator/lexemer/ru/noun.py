@@ -25,14 +25,14 @@ class RuNoun(TemplateProcessor):
         'фам',
     ]
 
-    def __init__(self, template: str) -> None:
+    def __init__(self, lang_code: str, template: str) -> None:
         if template == 'inflection сущ ru':
             params = self.common_params
         elif template == 'сущ-ru':
             params = self.params2
         else:
             raise Exception(f'Unknown template {template}')
-        super().__init__(template, params, is_primary=True)
+        super().__init__(lang_code, template, params, is_primary=True)
 
     parameters = {
         #
@@ -150,8 +150,8 @@ class RuNoun(TemplateProcessor):
 
 
 class RuUnknownNoun(TemplateProcessor):
-    def __init__(self, template: str) -> None:
-        super().__init__(template, ['2'], is_primary=True)
+    def __init__(self, lang_code: str, template: str) -> None:
+        super().__init__(lang_code, template, ['2'], is_primary=True)
 
     def run(self, parser, param_getter, params: dict):
         pass

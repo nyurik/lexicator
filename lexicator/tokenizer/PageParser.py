@@ -5,10 +5,11 @@ import re
 from typing import Dict, Union
 
 from lexicator.consts import NS_TEMPLATE_NAME, lower_first_letter, wikipage_must_have, root_templates, \
-    double_title_case, ignore_templates, re_template_names, re_ignore_template_prefixes
+    double_title_case, ignore_templates, re_template_names, re_ignore_template_prefixes, upper_first_letter
 from lexicator.wikicache import PageFilter, ContentStore, LogConfig, PageContent
 from .ParserState import ParserState
 from .TemplateParser import TemplateParser
+from .common import well_known_parameters, expand_template
 
 
 class PageParser(PageFilter):
@@ -28,8 +29,17 @@ class PageParser(PageFilter):
         self.re_root_templates_full_str = re.compile(r'^(' + '|'.join(self.root_templates) + r')$')
         self.ignore_templates = double_title_case(ignore_templates[lang_code])
         self.re_template_names = re_template_names[lang_code]
+
         self.re_ignore_template_prefixes = re.compile(
             r'^(' + '|'.join(double_title_case(re_ignore_template_prefixes[lang_code])) + r')')
+
+        self.re_well_known_parameters = [re.compile(r'^\s*(' + word + r')\s*$')
+                                         for word in well_known_parameters[lang_code]]
+
+        self.expand_template = {t: (lambda arg: False) for t in self.root_templates}
+        for k, v in expand_template[lang_code].items():
+            self.expand_template[k] = v
+            self.expand_template[upper_first_letter(k)] = v
 
     def process_page(self, page: PageContent, force: Union[bool, str]) -> PageContent:
         if page.content and self.is_valid_page(page):

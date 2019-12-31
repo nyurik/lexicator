@@ -18,6 +18,10 @@ def double_title_case(dataset: Union[set, dict]) -> Union[set, dict]:
     return dataset
 
 
+def upper_first_letter(title: str) -> str:
+    return f'{title[0].upper()}{title[1:]}'
+
+
 def lower_first_letter(title: str) -> str:
     return f'{title[0].lower()}{title[1:]}'
 

@@ -1,23 +1,34 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Dict, Union
+import re
+from typing import Dict, Union, Set
 
 from lexicator.consts import MEANING_HEADERS
-from lexicator.wikicache import ContentStore, PageContent, LogConfig, PageFilter
+from lexicator.wikicache import ContentStore, PageContent, LogConfig, PageFilter, MwSite
 from .PageToLexeme import PageToLexeme
-from .languages import handled_types
+from .common import handled_types, resolver_classes
 
 
 class PageToLexemsFilter(PageFilter):
-    def __init__(self, log_config: LogConfig, lang_code: str, source: ContentStore,
-                 resolvers: Dict[str, ContentStore]) -> None:
+    def __init__(self, log_config: LogConfig, site: MwSite, source: ContentStore) -> None:
         super().__init__(log_config, source)
-        self.lang_code = lang_code
-        self.source = source
-        self.resolvers = resolvers
-        self.handled_types = handled_types[lang_code]
-        self.meanings_headers = set((f"_{v}" for v in MEANING_HEADERS[lang_code]))
+        self.lang_code: str = site.lang_code
+        self.source: ContentStore = source
+        self.handled_types: Set[str] = handled_types[self.lang_code]
+        self.meanings_headers: Set[str] = set((f"_{v}" for v in MEANING_HEADERS[self.lang_code]))
+
+        retrievers = [v(log_config, site, source) for v in resolver_classes[self.lang_code]]
+        non_letters = r'[^\w-]'
+
+        self.resolvers: Dict[str, ContentStore] = {
+            v.template_name:
+                ContentStore(source.filename.parent / f"resolve_{re.sub(non_letters, '_', v.template_name)}.db", v)
+            for v in retrievers}
+
+    def before_refresh(self, filters=None):
+        for v in self.resolvers.values():
+            v.custom_refresh(filters)
 
     # noinspection PyUnusedLocal
     def process_page(self, page: PageContent, force: Union[bool, str]) -> Union[PageContent, None]:

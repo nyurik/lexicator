@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 from html import unescape
+from typing import Union
 
 from mwparserfromhell import parse as mw_parse
-from mwparserfromhell.nodes import Template, Text, Wikilink, Comment, Heading, Argument, Tag, HTMLEntity, ExternalLink
+from mwparserfromhell.nodes import Template, Text, Wikilink, Comment, Heading, Argument, Tag, HTMLEntity, \
+    ExternalLink, Node
 from mwparserfromhell.nodes.extras import Parameter
+from mwparserfromhell.wikicode import Wikicode
 
 from lexicator.consts import ignore_pages_if_template, MEANING_HEADERS
 from .ParserState import ParserState
-from .misc import ignore_types, re_well_known_parameters, re_allowed_extras, params_to_dict, \
-    custom_templates, expand_template
+from .common import ignore_types, re_allowed_extras, params_to_dict, custom_templates, re_section_headers
 
 
 class TemplateParser:
@@ -18,9 +20,11 @@ class TemplateParser:
         self.word = word
         self.content = content
         self.arguments = arguments
+        self.lang_code = state.page_parser.lang_code
         self.state = state
+        self.re_section_headers = re_section_headers[self.lang_code]
 
-    def run(self):
+    def run(self) -> Wikicode:
         # print(f'\n------------------ {self.word}: "{self.template_name}" ----------------------')
         code = mw_parse(self.content)
         self.apply_wikitext(code)
@@ -28,12 +32,11 @@ class TemplateParser:
 
     def parse_page(self):
         code = mw_parse(self.content)
-
-        for ru_section in code.get_sections(levels=[1], matches=r'\{\{\s*-ru-\s*\}\}', include_headings=False):
+        for section in code.get_sections(levels=[1], matches=self.re_section_headers, include_headings=False):
             self.state.header = []
-            self.parse_section(code, ru_section)
+            self.parse_section(code, section)
 
-    def parse_section(self, code, section):
+    def parse_section(self, code: Wikicode, section: Wikicode):
         for arg in section.filter(recursive=False):
             typ = type(arg)
             if typ in ignore_types:
@@ -46,7 +49,7 @@ class TemplateParser:
                 name = self.to_template_name(name)
                 if name in self.state.page_parser.ignore_templates:
                     continue
-                if name in ignore_pages_if_template['ru']:
+                if name in ignore_pages_if_template[self.lang_code]:
                     return None  # ignore these pages
 
                 root_match = self.state.page_parser.re_root_templates_full_str.match(name)
@@ -54,7 +57,7 @@ class TemplateParser:
                     # Remove well-known params
                     for param in list(arg.params):
                         param_name = str(param.name)
-                        for re_param in re_well_known_parameters:
+                        for re_param in self.state.page_parser.re_well_known_parameters:
                             m = re_param.match(param_name)
                             if not m:
                                 continue
@@ -98,7 +101,7 @@ class TemplateParser:
                 templates = arg.title.filter_templates(recursive=False)
                 if len(templates) == 1:
                     name = str(templates[0].name).strip()
-                    if name in MEANING_HEADERS[self.state.page_parser.lang_code]:
+                    if name in MEANING_HEADERS[self.lang_code]:
                         template = {name: params_to_dict(templates[0].params)}
                         code.remove(templates[0])
                 if templates and not template:
@@ -114,7 +117,7 @@ class TemplateParser:
             else:
                 self.warn(f"{self.state.header} {self.word}: Ha? {typ}  {arg}")
 
-    def to_template_name(self, name):
+    def to_template_name(self, name: str):
         if name.startswith(self.state.page_parser.template_ns) or \
                 name.startswith(self.state.page_parser.template_ns_lc):
             return name[len(self.state.page_parser.template_ns):]
@@ -123,13 +126,13 @@ class TemplateParser:
         else:
             return name
 
-    def apply_wikitext(self, code):
+    def apply_wikitext(self, code: Wikicode):
         if code:
             # print(str(code).replace('\n', '\\n')[:100])
             for arg in code.filter(recursive=False):
                 self.apply_value(code, arg)
 
-    def apply_value(self, code, arg):
+    def apply_value(self, code: Wikicode, arg: Union[Node, Template]):
         typ = type(arg)
         if typ == Text:
             return
@@ -182,8 +185,9 @@ class TemplateParser:
                     self.apply_value(code, param)
                 if name in custom_templates:
                     custom_templates[name](self, code, arg)
-                elif (name in expand_template and not expand_template[name](arg)) or \
-                        name in self.state.page_parser.ignore_templates:
+                elif ((name in self.state.page_parser.expand_template
+                       and not self.state.page_parser.expand_template[name](arg))
+                      or name in self.state.page_parser.ignore_templates):
                     # self.warn(f"Template {name} should not be expanded")
                     return
                 else:
@@ -221,7 +225,7 @@ class TemplateParser:
         else:
             raise ValueError(f'Unknown type {typ} in {arg}')
 
-    def repl_conditional(self, arg, code, index):
+    def repl_conditional(self, arg: Template, code: Wikicode, index: Union[str, int]):
         if arg.has(index):
             param = arg.get(index)
             self.apply_wikitext(param.value)
@@ -229,5 +233,5 @@ class TemplateParser:
         else:
             code.remove(arg)
 
-    def warn(self, message):
+    def warn(self, message: str):
         self.state.warnings.append(message)

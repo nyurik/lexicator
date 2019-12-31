@@ -10,7 +10,8 @@ from .TemplateUtils import normalize
 
 
 class TemplateProcessorBase(ABC):
-    def __init__(self, template: str, is_primary: bool = False, autorun: bool = True) -> None:
+    def __init__(self, lang_code: str, template: str, is_primary: bool = False, autorun: bool = True) -> None:
+        self.lang_code = lang_code
         self.template = template
         self.is_primary = is_primary
         self.autorun = autorun
@@ -21,10 +22,11 @@ class TemplateProcessorBase(ABC):
 
 
 class TemplateProcessor(TemplateProcessorBase, ABC):
-    def __init__(self, template: str, known_params: List[str], is_primary: bool = False, autorun: bool = True) -> None:
-        super().__init__(template, is_primary, autorun)
+    def __init__(self, lang_code: str, template: str, known_params: List[str], is_primary: bool = False,
+                 autorun: bool = True) -> None:
+        super().__init__(lang_code, template, is_primary, autorun)
         self.known_params = known_params
-        self.expects_type = root_templates['ru'][template] if template in root_templates else None
+        self.expects_type = root_templates[self.lang_code][template] if template in root_templates else None
 
     def process(self, parser, raw_params):
         if self.expects_type and parser.grammar_type not in self.expects_type:

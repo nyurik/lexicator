@@ -15,8 +15,8 @@ def assert_lang(param_getter, expects_lang):
 
 
 class RuTranscription(TemplateProcessor):
-    def __init__(self, template: str) -> None:
-        super().__init__(template, ['1', '2', 'lang', 'источник', 'норма'])
+    def __init__(self, lang_code: str, template: str) -> None:
+        super().__init__(lang_code, template, ['1', '2', 'lang', 'источник', 'норма'])
 
     # noinspection PyUnusedLocal
     def run(self, parser, param_getter: Callable[[str], str], params: dict):
@@ -33,8 +33,8 @@ class RuTranscription(TemplateProcessor):
 
 
 class RuTranscriptions(TemplateProcessor):
-    def __init__(self, template: str) -> None:
-        super().__init__(template, ['1', '2', '3', '4', 'мн2', 'lang', 'источник', 'норма'])
+    def __init__(self, lang_code: str, template: str) -> None:
+        super().__init__(lang_code, template, ['1', '2', '3', '4', 'мн2', 'lang', 'источник', 'норма'])
 
     # noinspection PyUnusedLocal
     def run(self, parser, param_getter: Callable[[str], str], params: dict):

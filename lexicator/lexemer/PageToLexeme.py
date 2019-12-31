@@ -6,7 +6,7 @@ from lexicator.consts import word_types
 from lexicator.wikicache import ContentStore
 from .LexemeParserState import LexemeParserState
 from .TemplateUtils import test_str
-from .languages import templates, known_headers
+from .common import templates, known_headers
 
 
 class PageToLexeme:

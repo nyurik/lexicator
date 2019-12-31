@@ -4,7 +4,7 @@ from lexicator.wikicache import ContentStore
 from lexicator.wikicache import ResolverViaMwParse, LogConfig, MwSite
 
 
-class ResolveRuNoun(ResolverViaMwParse):
+class RuResolveNoun(ResolverViaMwParse):
     def __init__(self, log_config: LogConfig, site: MwSite, template_source: ContentStore):
         # noinspection SpellCheckingInspection
         super().__init__(
@@ -19,7 +19,7 @@ class ResolveRuNoun(ResolverViaMwParse):
                            'скл', 'слоги', 'Сч', 'фам', 'чередование', 'шаблон-кат'])
 
 
-class ResolveRuTranscription(ResolverViaMwParse):
+class RuResolveTranscription(ResolverViaMwParse):
     def __init__(self, log_config: LogConfig, site: MwSite, template_source: ContentStore):
         super().__init__(
             site, template_source, log_config=log_config, batch_size=1000,
@@ -27,7 +27,7 @@ class ResolveRuTranscription(ResolverViaMwParse):
             output_params=['1', '2', 'lang', 'источник', 'норма'])
 
 
-class ResolveRuTranscriptions(ResolverViaMwParse):
+class RuResolveTranscriptions(ResolverViaMwParse):
     def __init__(self, log_config: LogConfig, site: MwSite, template_source: ContentStore):
         super().__init__(
             site, template_source, log_config=log_config, batch_size=500,

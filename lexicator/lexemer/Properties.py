@@ -6,7 +6,7 @@ from typing import Dict, Set, Union, Any
 __all__ = ["mono_value", "ClaimValue", "set_qualifiers_on_new", "set_references_on_new", "Property",
            "P_HAS_QUALITY", "P_GRAMMATICAL_GENDER", "P_INFLECTION_CLASS", "P_WORD_STEM", "P_WORD_ROOT",
            "P_PRONUNCIATION", "P_IPA_TRANSCRIPTION", "P_PRONUNCIATION_AUDIO", "P_HYPHENATION", "P_DESCRIBED_BY",
-           "P_IMPORTED_FROM_WM", ]
+           "P_IMPORTED_FROM_WM"]
 
 
 def mono_value(lang, text):

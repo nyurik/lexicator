@@ -24,13 +24,18 @@ def validate_flag(params_to_check, enable=False):
 
 
 class RuAdjective(TemplateProcessor):
-    def __init__(self, template: str) -> None:
-        super().__init__(template, [
-            'acc-pl-a', 'acc-pl-n', 'acc-sg-f', 'acc-sg-m-a', 'acc-sg-m-n', 'acc-sg-n', 'anim', 'dat-pl', 'dat-sg-f',
-            'dat-sg-m', 'dat-sg-n', 'gen-pl', 'gen-sg-f', 'gen-sg-m', 'gen-sg-n', 'ins-pl', 'ins-sg-f', 'ins-sg-m',
-            'ins-sg-n', 'nof', 'nol', 'nom', 'nom-pl', 'nom-sg-f', 'nom-sg-m', 'nom-sg-n', 'non', 'nowrap', 'prp-pl',
-            'prp-sg-f', 'prp-sg-m', 'prp-sg-n', 'srt-pl', 'srt-sg-f', 'srt-sg-m', 'srt-sg-n', 'краткая', 'суфф'
-        ], is_primary=True)
+    def __init__(self, lang_code: str, template: str) -> None:
+        super().__init__(
+            lang_code,
+            template,
+            [
+                'acc-pl-a', 'acc-pl-n', 'acc-sg-f', 'acc-sg-m-a', 'acc-sg-m-n', 'acc-sg-n', 'anim', 'dat-pl',
+                'dat-sg-f', 'dat-sg-m', 'dat-sg-n', 'gen-pl', 'gen-sg-f', 'gen-sg-m', 'gen-sg-n', 'ins-pl', 'ins-sg-f',
+                'ins-sg-m', 'ins-sg-n', 'nof', 'nol', 'nom', 'nom-pl', 'nom-sg-f', 'nom-sg-m', 'nom-sg-n', 'non',
+                'nowrap', 'prp-pl', 'prp-sg-f', 'prp-sg-m', 'prp-sg-n', 'srt-pl', 'srt-sg-f', 'srt-sg-m', 'srt-sg-n',
+                'краткая', 'суфф'
+            ],
+            is_primary=True)
 
     parameters = {
         #
@@ -132,12 +137,15 @@ class RuAdjective(TemplateProcessor):
 
 
 class RuParticiple(TemplateProcessor):
-    def __init__(self, template: str) -> None:
+    def __init__(self, lang_code: str, template: str) -> None:
         # noinspection SpellCheckingInspection
         super().__init__(
+            lang_code,
             template,
-            ['hide-text', 'nocat', 'вид', 'время', 'дореф', 'залог', 'коммент', 'склонение', 'склонение', 'слоги',
-             'соотв', 'соотв-мн', ], is_primary=False)
+            [
+                'hide-text', 'nocat', 'вид', 'время', 'дореф', 'залог', 'коммент', 'склонение', 'склонение', 'слоги',
+                'соотв', 'соотв-мн',
+            ], is_primary=False)
 
     parameters = {
         'время': (P_HAS_QUALITY, Q_FEATURES, dict(

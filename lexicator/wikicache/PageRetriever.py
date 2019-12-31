@@ -53,3 +53,9 @@ class PageRetriever(ABC):
 
     def custom_refresh(self, filters=None) -> Iterable[str]:
         pass
+
+    def before_refresh(self, filters=None):
+        pass
+
+    def after_refresh(self, filters=None):
+        pass

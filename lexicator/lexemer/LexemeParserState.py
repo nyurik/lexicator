@@ -87,16 +87,16 @@ class LexemeParserState:
                     grammar_type.intersection_update(typ)
 
         for header, template, params in self.data_section:
-            if template in root_templates['ru']:
-                add_types(root_templates['ru'][template])
+            if template in root_templates[self.parent.lang_code]:
+                add_types(root_templates[self.parent.lang_code][template])
             else:
-                for rx, tp in template_to_type['ru']:
+                for rx, tp in template_to_type[self.parent.lang_code]:
                     if rx.match(template):
                         add_types(tp)
         if not grammar_type:
             raise ValueError(f"Unknown grammar type:\n{self.data_section}")
         if len(grammar_type) > 1:
-            if grammar_type == root_templates['ru']['прил']:
+            if grammar_type == root_templates[self.parent.lang_code]['прил']:
                 return 'adjective'
             raise ValueError(
                 f"Multiple types found in {self.title} - {', '.join(grammar_type)}:\n{self.data_section}")
@@ -152,7 +152,7 @@ class LexemeParserState:
             form['claims'][P_PRONUNCIATION.id] = pronunciations
         if index >= len(pronunciations):
             if not pronunciations:
-                word = form['representations']['ru']['value']
+                word = form['representations'][self.parent.lang_code]['value']
             else:
                 word = P_PRONUNCIATION.get_value(pronunciations[0])['text']
             self.add_pronunciation(form, word)
@@ -170,24 +170,27 @@ class LexemeParserState:
         if 'forms' not in self.result:
             self.result['forms'] = []
         stressless_word = remove_stress(word)
-        form = dict(
-            add='',  # without this forms are not added
-            representations={
-                self.parent.lang_code: dict(
-                    language=self.parent.lang_code,
-                    value=self.validate_str(stressless_word, 'form_representation'),
-                )
-            },
-            grammaticalFeatures=[Q_FEATURES[v] for v in features],
-        )
+        form = self.create_form_obj(self.validate_str(stressless_word, 'form_representation'), features)
         if stressless_word != word:
             self.add_pronunciation(form, word)
         self.result['forms'].append(form)
         self.form_by_param[form_name] = form
 
+    def create_form_obj(self, word_form, features):
+        return dict(
+            add='',  # without this forms are not added
+            representations={
+                self.parent.lang_code: dict(
+                    language=self.parent.lang_code,
+                    value=word_form,
+                )
+            },
+            grammaticalFeatures=[Q_FEATURES[v] for v in features],
+        )
+
     def add_pronunciation(self, form, word):
         P_PRONUNCIATION.set_claim_on_new(form, ClaimValue(
-            mono_value('ru', self.validate_str(word, P_PRONUNCIATION.name))))
+            mono_value(self.parent.lang_code, self.validate_str(word, P_PRONUNCIATION.name))))
 
     def resolve_lua(self, template, params):
         if template in self.parent.resolvers:
@@ -208,7 +211,8 @@ class LexemeParserState:
     def add_stem(self):
         if 'основа' in self.unhandled_params:
             P_WORD_STEM.set_claim_on_new(self.result, ClaimValue(
-                mono_value('ru', self.validate_str(remove_stress(self.unhandled_params['основа']), 'основа'))))
+                mono_value(self.parent.lang_code,
+                           self.validate_str(remove_stress(self.unhandled_params['основа']), 'основа'))))
 
     def data_section_sorter(self, values):
         header, template, params = values

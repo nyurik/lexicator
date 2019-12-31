@@ -22,9 +22,9 @@ def to_compact_json(data):
 
 class ContentStore:
     def __init__(self, filename: Path, retriever: PageRetriever):
-        self.filename = filename
-        self.retriever = retriever
-        self.retriever_initialized = False
+        self.filename: Path = filename
+        self.retriever: PageRetriever = retriever
+        self.retriever_initialized: bool = False
 
         self.engine = create_engine(f'sqlite:///{filename}',
                                     # echo=True
@@ -176,9 +176,14 @@ class ContentStore:
     def refresher(self, progress, reporter, filters, delta: Union[timedelta, bool] = False) -> Iterable[str]:
         if not self.can_refresh():
             raise ValueError(f"Unable to refresh {self.filename}")
-
-        # start_ts = datetime.utcnow()
         self.init_retriever()
+        self.retriever.before_refresh(filters)
+        titles = self._refresher(progress, reporter, filters, delta)
+        self.retriever.after_refresh(filters)
+        return titles
+
+    def _refresher(self, progress, reporter, filters, delta: Union[timedelta, bool] = False) -> Iterable[str]:
+        # start_ts = datetime.utcnow()
         last_change = self.get_last_change()
         if delta:
             if isinstance(delta, timedelta):
