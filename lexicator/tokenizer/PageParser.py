@@ -5,11 +5,12 @@ import re
 from typing import Dict, Union
 
 from lexicator.consts import NS_TEMPLATE_NAME, lower_first_letter, wikipage_must_have, root_templates, \
-    double_title_case, ignore_templates, re_template_names, re_ignore_template_prefixes, upper_first_letter
+    double_title_case, ignore_templates, re_template_names, re_ignore_template_prefixes, upper_first_letter, \
+    well_known_parameters, re_allowed_extras, re_section_headers, ignore_pages_if_template, MEANING_HEADERS
 from lexicator.wikicache import PageFilter, ContentStore, LogConfig, PageContent
 from .ParserState import ParserState
 from .TemplateParser import TemplateParser
-from .common import well_known_parameters, expand_template
+from .common import expand_template, preparser
 
 
 class PageParser(PageFilter):
@@ -29,6 +30,12 @@ class PageParser(PageFilter):
         self.re_root_templates_full_str = re.compile(r'^(' + '|'.join(self.root_templates) + r')$')
         self.ignore_templates = double_title_case(ignore_templates[lang_code])
         self.re_template_names = re_template_names[lang_code]
+        self.re_allowed_extras = re_allowed_extras[lang_code]
+        self.ignore_pages_if_template = ignore_pages_if_template[self.lang_code]
+        self.meaning_headers = MEANING_HEADERS[self.lang_code]
+
+        section_header_regex = re_section_headers[self.lang_code]
+        self.re_section_headers = (lambda obj: section_header_regex.search(str(obj))) if section_header_regex else None
 
         self.re_ignore_template_prefixes = re.compile(
             r'^(' + '|'.join(double_title_case(re_ignore_template_prefixes[lang_code])) + r')')
@@ -40,6 +47,8 @@ class PageParser(PageFilter):
         for k, v in expand_template[lang_code].items():
             self.expand_template[k] = v
             self.expand_template[upper_first_letter(k)] = v
+
+        self.preparser = preparser[lang_code] or (lambda v: v)
 
     def process_page(self, page: PageContent, force: Union[bool, str]) -> PageContent:
         if page.content and self.is_valid_page(page):
@@ -54,7 +63,7 @@ class PageParser(PageFilter):
 
     def is_valid_page(self, page: PageContent):
         return self.re_wikipage_must_have.search(page.content) and (
-                self.re_template_names.search(page.content)
-                or
                 self.re_root_templates.search(page.content)
+                or
+                (self.re_template_names and self.re_template_names.search(page.content))
         )

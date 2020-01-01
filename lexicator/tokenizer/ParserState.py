@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from html import unescape
 from typing import List, TYPE_CHECKING, Dict, Tuple, Union, Set
@@ -9,6 +10,7 @@ from lexicator.wikicache import PageContent
 if TYPE_CHECKING:
     from .PageParser import PageParser
 
+re_title_space_normalizer = re.compile(r'[ _]+')
 
 @dataclass
 class ParserState:
@@ -27,6 +29,9 @@ class ParserState:
         if not templates_no_ns:
             templates_no_ns.update(
                 {v.title.split(':', 1)[1]: v for v in self.page_parser.wiki_templates.get_all() if ':' in v.title})
+        if not self.force and name in templates_no_ns:
+            return templates_no_ns[name]
+        name = re_title_space_normalizer.sub(' ', name)
         if not self.force and name in templates_no_ns:
             return templates_no_ns[name]
         page = None

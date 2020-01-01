@@ -143,7 +143,7 @@ class RuNoun(TemplateProcessor):
                 return  # Skip this form
         super().param_to_form(parser, param, param_getter, features)
 
-        second_form_key = param + '2'
+        second_form_key = f'{param}2'
         second_val = param_getter(second_form_key)
         if second_val:
             parser.create_form(second_form_key, second_val, features)

@@ -50,7 +50,7 @@ class LexemeParserState:
 
         try:
             self.data_section = sorted(
-                [(self.parent.known_headers[tuple(h[1:])], t, p) for h, t, p in self.data_section],
+                [(self.parent.parent.known_headers[tuple(h[1:])], t, p) for h, t, p in self.data_section],
                 key=self.data_section_sorter)
         except KeyError as err:
             raise ValueError(f"unknown section header {err} found")
@@ -96,6 +96,7 @@ class LexemeParserState:
         if not grammar_type:
             raise ValueError(f"Unknown grammar type:\n{self.data_section}")
         if len(grammar_type) > 1:
+            # fixme - LOCALIZE
             if grammar_type == root_templates[self.parent.lang_code]['прил']:
                 return 'adjective'
             raise ValueError(
@@ -193,8 +194,8 @@ class LexemeParserState:
             mono_value(self.parent.lang_code, self.validate_str(word, P_PRONUNCIATION.name))))
 
     def resolve_lua(self, template, params):
-        if template in self.parent.resolvers:
-            return self.parent.resolvers[template].get(json_key(template, params)).data
+        if template in self.parent.parent.resolvers:
+            return self.parent.parent.resolvers[template].get(json_key(template, params)).data
         return params
 
     def split_words(self, param_value, count_expected=None):

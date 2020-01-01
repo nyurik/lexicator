@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from html import unescape
-from typing import Union
+from typing import Union, Iterable
 
 from mwparserfromhell import parse as mw_parse
 from mwparserfromhell.nodes import Template, Text, Wikilink, Comment, Heading, Argument, Tag, HTMLEntity, \
@@ -9,20 +9,17 @@ from mwparserfromhell.nodes import Template, Text, Wikilink, Comment, Heading, A
 from mwparserfromhell.nodes.extras import Parameter
 from mwparserfromhell.wikicode import Wikicode
 
-from lexicator.consts import ignore_pages_if_template, MEANING_HEADERS
 from .ParserState import ParserState
-from .common import ignore_types, re_allowed_extras, params_to_dict, custom_templates, re_section_headers
+from .common import ignore_types, custom_templates
 
 
 class TemplateParser:
     def __init__(self, template_name: str, word: str, content: str, arguments, state: ParserState) -> None:
         self.template_name = template_name
-        self.word = word
-        self.content = content
+        self.word: str = word
+        self.content: str = content
         self.arguments = arguments
-        self.lang_code = state.page_parser.lang_code
         self.state = state
-        self.re_section_headers = re_section_headers[self.lang_code]
 
     def run(self) -> Wikicode:
         # print(f'\n------------------ {self.word}: "{self.template_name}" ----------------------')
@@ -31,8 +28,10 @@ class TemplateParser:
         return code
 
     def parse_page(self):
-        code = mw_parse(self.content)
-        for section in code.get_sections(levels=[1], matches=self.re_section_headers, include_headings=False):
+        code = mw_parse(self.state.page_parser.preparser(self.content))
+        for section in code.get_sections(levels=[1],
+                                         matches=self.state.page_parser.re_section_headers,
+                                         include_headings=False):
             self.state.header = []
             self.parse_section(code, section)
 
@@ -49,11 +48,13 @@ class TemplateParser:
                 name = self.to_template_name(name)
                 if name in self.state.page_parser.ignore_templates:
                     continue
-                if name in ignore_pages_if_template[self.lang_code]:
+                if name in self.state.page_parser.ignore_pages_if_template:
                     return None  # ignore these pages
 
                 root_match = self.state.page_parser.re_root_templates_full_str.match(name)
-                if root_match or self.state.page_parser.re_template_names.match(name):
+                if root_match or (
+                        self.state.page_parser.re_template_names and
+                        self.state.page_parser.re_template_names.match(name)):
                     # Remove well-known params
                     for param in list(arg.params):
                         param_name = str(param.name)
@@ -74,8 +75,10 @@ class TemplateParser:
                                 elif arg2type != Comment:
                                     raise ValueError(f"cannot parse well known param {str(param).strip()}")
                             extras = extras.strip()
-                            if has_templates and extras != '' and not re_allowed_extras.match(extras):
-                                raise ValueError(f"well known param '{str(param).strip()}' has text and templates")
+                            if has_templates and extras != '':
+                                allowed_extras = self.state.page_parser.re_allowed_extras
+                                if not allowed_extras or not allowed_extras.match(extras):
+                                    raise ValueError(f"well known param '{str(param).strip()}' has text and templates")
                             if has_templates:
                                 self.parse_section(code, param.value)
                             elif extras:
@@ -101,7 +104,7 @@ class TemplateParser:
                 templates = arg.title.filter_templates(recursive=False)
                 if len(templates) == 1:
                     name = str(templates[0].name).strip()
-                    if name in MEANING_HEADERS[self.lang_code]:
+                    if name in self.state.page_parser.meaning_headers:
                         template = {name: params_to_dict(templates[0].params)}
                         code.remove(templates[0])
                 if templates and not template:
@@ -235,3 +238,12 @@ class TemplateParser:
 
     def warn(self, message: str):
         self.state.warnings.append(message)
+
+
+def params_to_dict(params: Iterable[Parameter]):
+    result = {}
+    for p in params:
+        value = str(p.value).strip()
+        if value:
+            result[str(p.name).strip()] = value
+    return result

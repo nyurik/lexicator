@@ -4,10 +4,10 @@ import dataclasses
 import re
 from typing import Dict, Union, Set
 
-from lexicator.consts import MEANING_HEADERS
+from lexicator.consts import MEANING_HEADERS, handled_types, known_headers
 from lexicator.wikicache import ContentStore, PageContent, LogConfig, PageFilter, MwSite
 from .PageToLexeme import PageToLexeme
-from .common import handled_types, resolver_classes
+from .common import resolver_classes
 
 
 class PageToLexemsFilter(PageFilter):
@@ -17,6 +17,9 @@ class PageToLexemsFilter(PageFilter):
         self.source: ContentStore = source
         self.handled_types: Set[str] = handled_types[self.lang_code]
         self.meanings_headers: Set[str] = set((f"_{v}" for v in MEANING_HEADERS[self.lang_code]))
+
+        self.known_headers = known_headers[self.lang_code]
+        self.known_headers[tuple()] = 'root'
 
         retrievers = [v(log_config, site, source) for v in resolver_classes[self.lang_code]]
         non_letters = r'[^\w-]'
@@ -52,7 +55,7 @@ class PageToLexemsFilter(PageFilter):
         errors = []
         for section in sections:
             try:
-                parser = PageToLexeme(self.lang_code, page.title, section, self.resolvers)
+                parser = PageToLexeme(self, page.title, section)
                 results.append(parser.run())
             except ValueError as err:
                 errors.append(str(err))

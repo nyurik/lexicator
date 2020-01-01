@@ -1,23 +1,24 @@
 from __future__ import annotations
 
-from typing import Dict, Any
+from typing import Any, TYPE_CHECKING
 
 from lexicator.consts import word_types
-from lexicator.wikicache import ContentStore
 from .LexemeParserState import LexemeParserState
 from .TemplateUtils import test_str
-from .common import templates, known_headers
+from .common import templates
+
+if TYPE_CHECKING:
+    from . import PageToLexemsFilter
 
 
 class PageToLexeme:
-    def __init__(self, lang_code, title, data_section, resolvers: Dict[str, ContentStore]) -> None:
-        self.lang_code = lang_code
+    def __init__(self, parent: PageToLexemsFilter, title, data_section) -> None:
+        self.parent = parent
+        self.lang_code = parent.lang_code
         self.title = title
         self.data_section = data_section
-        self.resolvers = resolvers
         self.grammar_types = set()
-        self.templates = templates[lang_code]
-        self.known_headers = known_headers[lang_code]
+        self.templates = templates[self.lang_code]
         self.word_type: str = self.calc_word_type()
 
     def run(self) -> Any:
