@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 re_title_space_normalizer = re.compile(r'[ _]+')
 
+
 @dataclass
 class ParserState:
     def __init__(self, page_parser: PageParser, page: PageContent, force: bool) -> None:

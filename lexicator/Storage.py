@@ -3,7 +3,7 @@ from pathlib import Path
 from lexicator.lexemer.PageToLexemsFilter import PageToLexemsFilter
 from lexicator.tokenizer import PageParser
 from lexicator.uploader import UpdateWiktionaryWithLexemeId, WikidataUploader
-from lexicator.utils import Config
+from lexicator.Config import Config
 from lexicator.wikicache import ContentStore, LexemeDownloader, TemplateDownloader, WiktionaryWordDownloader
 
 

@@ -102,6 +102,7 @@ ru_ignore_templates = {
 ru_root_templates = {
     'abbrev': 'abbreviation',
     'прил': {'adjective', 'participle'},  # прилагательное, причастие
+    'прил-ru': {'adjective'},
     'прич ru': {'participle'},
     'наречие': 'adverb',
     'adv ru': 'adverb',  # наречие

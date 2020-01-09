@@ -18,21 +18,15 @@ from pathlib import Path
 
 from docopt import docopt
 
+from lexicator.Config import Config
 from lexicator.Storage import Storage
 from lexicator.Validator import Validator
-from lexicator.utils import Config, get_site
-from lexicator.wikicache import WikidataQueryService, to_json
+from lexicator.wikicache import to_json
 
 
 def main(arguments):
-    config = Config(
-        wiktionary=get_site('ru.wiktionary.org', True),
-        wikidata=get_site('www.wikidata.org', True),
-        wdqs=WikidataQueryService(),
-        print_warnings=True,
-        verbose=False,
-        # parse_fields=['acc-sg'],
-    )
+
+    config = Config('ru', 'YurikBot@lexicator', Path('./.password'))
 
     password_file = Path('./password')
     if password_file.is_file():

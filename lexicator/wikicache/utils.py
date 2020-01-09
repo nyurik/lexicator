@@ -42,12 +42,16 @@ def json_key(template, params):
 
 @dataclasses.dataclass
 class LogConfig:
-    print_warnings: bool
-    verbose: bool
+    print_warnings: bool = True
+    verbose: bool = False
 
 
 class MwSite(Site):
-    def __init__(self, url, lang_code: str, use_bot_limits: bool, *args, **kwargs):
+    def __init__(self, url, lang_code: str, *args, **kwargs):
         super().__init__(url, *args, **kwargs)
         self.lang_code = lang_code
-        self.use_bot_limits = use_bot_limits
+        self._use_bot_limits = None
+
+    @property
+    def use_bot_limits(self) -> bool:
+        return self.is_bot()
