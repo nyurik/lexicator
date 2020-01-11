@@ -8,12 +8,12 @@ from lexicator.consts import NS_TEMPLATE_NAME, lower_first_letter, wikipage_must
     double_title_case, ignore_templates, re_template_names, re_ignore_template_prefixes, upper_first_letter, \
     well_known_parameters, re_allowed_extras, re_section_headers, ignore_pages_if_template, MEANING_HEADERS
 from lexicator.wikicache import PageFilter, ContentStore, LogConfig, PageContent
-from .ParserState import ParserState
+from .TokenizerState import TokenizerState
 from .TemplateParser import TemplateParser
 from .common import expand_template, preparser
 
 
-class PageParser(PageFilter):
+class PageTokenizer(PageFilter):
     # existing_entities: Dict[str, Dict[str, List]]
 
     def __init__(self, lang_code: str, source: ContentStore, wiki_templates: ContentStore,
@@ -52,7 +52,7 @@ class PageParser(PageFilter):
 
     def process_page(self, page: PageContent, force: Union[bool, str]) -> PageContent:
         if page.content and self.is_valid_page(page):
-            state = ParserState(self, page, force)
+            state = TokenizerState(self, page, force)
             TemplateParser('', page.title, page.content, {}, state).parse_page()
             if state.warnings:
                 print(f"Warnings for {page.title}:\n  " + '\n  '.join(state.warnings))

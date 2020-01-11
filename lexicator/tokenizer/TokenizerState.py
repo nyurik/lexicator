@@ -8,15 +8,15 @@ from typing import List, TYPE_CHECKING, Dict, Tuple, Union, Set
 from lexicator.wikicache import PageContent
 
 if TYPE_CHECKING:
-    from .PageParser import PageParser
+    from .PageTokenizer import PageTokenizer
 
 re_title_space_normalizer = re.compile(r'[ _]+')
 
 
 @dataclass
-class ParserState:
-    def __init__(self, page_parser: PageParser, page: PageContent, force: bool) -> None:
-        self.page_parser: PageParser = page_parser
+class TokenizerState:
+    def __init__(self, page_parser: PageTokenizer, page: PageContent, force: bool) -> None:
+        self.page_parser: PageTokenizer = page_parser
         self.page: PageContent = page
         self.force: bool = force
 

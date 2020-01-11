@@ -9,12 +9,12 @@ from mwparserfromhell.nodes import Template, Text, Wikilink, Comment, Heading, A
 from mwparserfromhell.nodes.extras import Parameter
 from mwparserfromhell.wikicode import Wikicode
 
-from .ParserState import ParserState
+from .TokenizerState import TokenizerState
 from .common import ignore_types, custom_templates
 
 
 class TemplateParser:
-    def __init__(self, template_name: str, word: str, content: str, arguments, state: ParserState) -> None:
+    def __init__(self, template_name: str, word: str, content: str, arguments, state: TokenizerState) -> None:
         self.template_name = template_name
         self.word: str = word
         self.content: str = content

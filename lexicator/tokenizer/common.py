@@ -32,6 +32,7 @@ custom_templates = {
     'anchorencode:': lambda s, c, t: c.remove(t),
     'ns:0': lambda s, c, t: c.remove(t),
     'ns:Template': lambda s, c, t: c.replace(t, str(NS_TEMPLATE)),
+    'Str crop': lambda s, c, t: c.replace(t, str(t.params[0]).strip()[:-int(str(t.params[1]).strip())]),
 }
 
 # TODO

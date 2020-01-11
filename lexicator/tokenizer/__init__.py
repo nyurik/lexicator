@@ -1,1 +1,1 @@
-from .PageParser import PageParser
+from .PageTokenizer import PageTokenizer

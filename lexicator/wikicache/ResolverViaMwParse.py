@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 from datetime import datetime
+from itertools import islice
 from typing import List, Iterable, Tuple, Union, Callable, Dict, TYPE_CHECKING
 
 from mwparserfromhell.nodes import Template
@@ -64,51 +65,91 @@ class ResolverViaMwParse(PageRetriever):
                    progress_reporter: Callable[[str], None] = None) -> Iterable[PageContent]:
         if not self.site:
             return []
-        for batch in batches(source, self.batch_size):
-            vals = {str(i): (v, json.loads(v)) for i, v in enumerate(batch)}
-            wikitext = ''
-            for ind, val in vals.items():
-                t_name, = val[1]
-                if t_name != self.template_name:
-                    raise ValueError(f"Unexpected template name {t_name} instead of {self.template_name}")
-                t_params = val[1][t_name]
-                t_params2 = {k: t_params[k] for k in t_params if k not in self.ignore_params}
-                if t_params:
-                    wikitext += f"* _INDEX_={ind}\n"
-                    wikitext += str(Template(t_name, params=[Parameter(k, v) for k, v in t_params2.items()]))
-                    wikitext += '\n'
-                else:
-                    yield PageContent(title=val[0], timestamp=datetime.utcnow(), data={})
-            if not wikitext:
-                continue
+
+        min_batch_size = 15
+        source_iter = iter(source)
+        batch_size = self.batch_size
+        while True:
+            # take first batch_size items, where batch_size could be adjusted in subsequent calls
+            batch = list(islice(source_iter, batch_size))
+            if not batch:
+                break
+            pages, skipped = self.process_batch(batch)
+            yield from pages
+            if skipped and batch_size > min_batch_size:
+                batch_size = max(min_batch_size, batch_size - len(skipped) - 1)
+                print(f"Reduced batch size for {self.template_name} to {batch_size} because of {len(skipped)} skipped")
+            all_ignored = []
+            while skipped:
+                batch = skipped[:min_batch_size]
+                del skipped[:min_batch_size]
+                pages, ignored = self.process_batch(batch)
+                yield from pages
+                all_ignored.extend(ignored)
+            if all_ignored:
+                prefix = "\n* "
+                print(f"Ignoring empty results: {prefix}{prefix.join(all_ignored)}")
+
+    def process_batch(self, batch: List[str]) -> Tuple[List[PageContent], List[str]]:
+        vals = {str(i): (v, json.loads(v)) for i, v in enumerate(batch)}
+        results, wikitext, first_page = self.create_wikitext(vals)
+        if results:
+            print(f'Skipping {len(results):,} empty pages starting with {results[0].title}')
+        if not wikitext:
+            return results, []
+        print(f"API: resolving {len(batch) - len(results)} templates, text len={len(wikitext):,}, "
+              f"starting with {first_page}")
+        text = self.call_parse_api(wikitext)
+        skipped: List[str] = []
+        result: Union[PageContent, None] = None
+        for k, v in self.re_params.findall(text):
+            if k == '_INDEX_':
+                if result:
+                    if result.data:
+                        results.append(result)
+                    else:
+                        skipped.append(result.title)
+                if v == 'END':
+                    break
+                result = PageContent(title=vals[v][0], timestamp=datetime.utcnow(), data={})
+            else:
+                result.data[k] = v
+        return results, skipped
+
+    def call_parse_api(self, wikitext):
+        return self.site(
+            'parse',
+            text=wikitext,
+            prop='text',
+            contentmodel='wikitext',
+            contentformat='text/x-wiki',
+            templatesandboxcontentmodel='wikitext',
+            templatesandboxcontentformat='text/x-wiki',
+            templatesandboxtitle=self.internal_template,
+            templatesandboxtext=self.template_sandbox_text,
+        ).parse.text
+
+    def create_wikitext(self, vals):
+        wikitext = ''
+        empty_pages = []
+        first_page = ''
+        for ind, val in vals.items():
+            t_name, = val[1]
+            if t_name != self.template_name:
+                raise ValueError(f"Unexpected template name {t_name} instead of {self.template_name}")
+            t_params = val[1][t_name]
+            t_params2 = {k: t_params[k] for k in t_params if k not in self.ignore_params}
+            if t_params:
+                if not first_page:
+                    first_page = val[0]
+                wikitext += f"* _INDEX_={ind}\n"
+                wikitext += str(Template(t_name, params=[Parameter(k, v) for k, v in t_params2.items()]))
+                wikitext += '\n'
+            else:
+                empty_pages.append(PageContent(title=val[0], timestamp=datetime.utcnow(), data={}))
+        if wikitext:
             wikitext += f"* _INDEX_=END\n"
-
-            print(f"API: resolving {len(batch)} templates, text len={len(wikitext):,}, starting with {batch[0]}")
-            text = self.site(
-                'parse',
-                text=wikitext,
-                prop='text',
-                contentmodel='wikitext',
-                contentformat='text/x-wiki',
-                templatesandboxcontentmodel='wikitext',
-                templatesandboxcontentformat='text/x-wiki',
-                templatesandboxtitle=self.internal_template,
-                templatesandboxtext=self.template_sandbox_text,
-            ).parse.text
-
-            result: Union[PageContent, None] = None
-            for k, v in self.re_params.findall(text):
-                if k == '_INDEX_':
-                    if result:
-                        if result.data:
-                            yield result
-                        else:
-                            print(f'Empty result for {result.title}, skipping')
-                    if v == 'END':
-                        break
-                    result = PageContent(title=vals[v][0], timestamp=datetime.utcnow(), data={})
-                else:
-                    result.data[k] = v
+        return empty_pages, wikitext, first_page
 
     def get_all_titles(self, progress_reporter: Callable[[str], None], exclude: Dict[str, datetime] = None,
                        filters=None) -> Iterable[PageContent]:

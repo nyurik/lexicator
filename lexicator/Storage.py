@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from lexicator.lexemer.PageToLexemsFilter import PageToLexemsFilter
-from lexicator.tokenizer import PageParser
+from lexicator.tokenizer import PageTokenizer
 from lexicator.uploader import UpdateWiktionaryWithLexemeId, WikidataUploader
 from lexicator.Config import Config
 from lexicator.wikicache import ContentStore, LexemeDownloader, TemplateDownloader, WiktionaryWordDownloader
@@ -24,7 +24,7 @@ class Storage:
             LexemeDownloader(config.wikidata, config.wdqs, config.wiktionary.lang_code, log_config))
         self.parsed_wiki_words = ContentStore(
             path / 'parsed.wiktionary.db',
-            PageParser(config.wiktionary.lang_code, self.wiki_words, self.wiki_templates, log_config))
+            PageTokenizer(config.wiktionary.lang_code, self.wiki_words, self.wiki_templates, log_config))
         self.desired_lexemes = ContentStore(
             path / 'expected_lexemes.db',
             PageToLexemsFilter(log_config, config.wiktionary, self.parsed_wiki_words))

@@ -22,7 +22,7 @@ class RuResolveNoun(ResolverViaMwParse):
 class RuResolveTranscription(ResolverViaMwParse):
     def __init__(self, log_config: LogConfig, site: MwSite, template_source: ContentStore):
         super().__init__(
-            site, template_source, log_config=log_config, batch_size=1000,
+            site, template_source, log_config=log_config, batch_size=1500,
             template_name='transcription-ru', internal_template='transcription', ignore_params=[],
             output_params=['1', '2', 'lang', 'источник', 'норма'])
 
@@ -30,6 +30,6 @@ class RuResolveTranscription(ResolverViaMwParse):
 class RuResolveTranscriptions(ResolverViaMwParse):
     def __init__(self, log_config: LogConfig, site: MwSite, template_source: ContentStore):
         super().__init__(
-            site, template_source, log_config=log_config, batch_size=500,
+            site, template_source, log_config=log_config, batch_size=1000,
             template_name='transcriptions-ru', internal_template='transcriptions', ignore_params=[],
             output_params=['1', '2', '3', '4', 'lang', 'источник', 'мн2', 'норма'])

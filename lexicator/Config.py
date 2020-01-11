@@ -29,7 +29,7 @@ class Config(LogConfig):
         self.wdqs = WikidataQueryService()
 
 
-def get_site(host: str, username: str, password: Union[Path, str], max_lag: int = 3) -> MwSite:
+def get_site(host: str, username: str, password: Union[Path, str], max_lag: int = 5) -> MwSite:
     retries = Retry(total=3, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
     session = requests.Session()
     session.mount('https://', HTTPAdapter(max_retries=retries))
