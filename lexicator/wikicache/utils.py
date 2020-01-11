@@ -27,13 +27,17 @@ def trim_timedelta(td: timedelta) -> str:
     return str(td + timedelta(seconds=1)).split('.', 1)[0]
 
 
+def to_compact_json(data):
+    return json.dumps(data, ensure_ascii=False, separators=(',', ':'))
+
+
 def to_json(obj, pretty=False):
     if dataclasses.is_dataclass(obj):
         obj = clean_empty_vals(dataclasses.asdict(obj))
     if pretty:
         return json.dumps(obj, ensure_ascii=False, indent=2)
     else:
-        return json.dumps(obj, ensure_ascii=False, separators=(',', ':'))
+        return to_compact_json(obj)
 
 
 def json_key(template, params):

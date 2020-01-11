@@ -93,7 +93,8 @@ class TemplateParser:
                             self.parse_section(code, new_arg)
 
                 elif not self.state.page_parser.re_ignore_template_prefixes.match(name):
-                    self.warn(f"{self.state.header} {self.word}: Unknown template {arg}")
+                    self.warn(f"{self.state.header} {self.word}: Unknown template {arg}, "
+                              f"consider adding it to ignore_templates")
             elif typ == Heading:
                 if len(self.state.header) < arg.level - 2:
                     self.state.header += [None] * (arg.level - 2 - len(self.state.header))

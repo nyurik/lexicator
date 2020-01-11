@@ -11,13 +11,9 @@ from sqlalchemy.orm import sessionmaker
 
 from .PageContent import PageContent
 from .PageRetriever import PageRetriever
-from .utils import batches, trim_timedelta
+from .utils import batches, trim_timedelta, to_compact_json
 
 T = TypeVar('T')
-
-
-def to_compact_json(data):
-    return json.dumps(data, ensure_ascii=False, separators=(',', ':'))
 
 
 class ContentStore:
